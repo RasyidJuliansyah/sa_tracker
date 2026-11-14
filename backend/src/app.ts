@@ -9,6 +9,7 @@ import { auditRouter } from './routes/audit.routes.js'
 import { masterRouter } from './routes/master.routes.js'
 import { usersRouter } from './routes/users.routes.js'
 import { schoolRouter } from './routes/school.routes.js'
+import { assignmentRouter } from './routes/assignment.routes.js'
 import { healthRouter } from './routes/health.routes.js'
 
 export function createApp() {
@@ -23,6 +24,7 @@ export function createApp() {
   app.use('/api', masterRouter)
   app.use('/api', auditRouter)
   app.use('/api', schoolRouter)
+  app.use('/api', assignmentRouter)
   app.use('/api/health', healthRouter)
   app.use(notFoundHandler)
   app.use(errorHandler)

@@ -11,6 +11,7 @@
     "build": "tsc -p tsconfig.json",
     "start": "node dist/index.js",
     "typecheck": "tsc --noEmit",
+    "pretest": "sh scripts/reset-test-db.sh || true",
     "test": "vitest run",
     "seed": "tsx prisma/seed.ts"
   },

@@ -40,3 +40,12 @@ Ringkasan sekolah: `{ id, npsn, name, lmsSchoolId, city, timezone, jenjang:{id,n
 | PATCH | `/schools/:id` | ADMIN, MANAGER | Sebagian field sekolah; audit berisi sebelum/sesudah |
 | POST | `/schools/:id/contracts` | ADMIN, MANAGER | Perpanjangan: `{ previousContractId, signedDate, start, end, value, note }`. Periode tidak boleh tumpang tindih, satu perpanjangan per kontrak. |
 | GET | `/schools/:id/changes` | ADMIN, MANAGER | Riwayat perubahan sekolah dan kontraknya (dari audit log) |
+
+## Penugasan dan target retention (B6)
+Peran: ADMIN, MANAGER.
+| Metode | Path | Keterangan |
+|---|---|---|
+| GET | `/assignments` | `{ agents:[{id,name,timezone,schools[]}], unassigned[] }` (ringkasan sekolah seperti B5) |
+| PUT | `/schools/:id/assignment` | `{ agentId }`. Tugaskan/pindahkan dalam satu transaksi (tutup baris lama, buat baru, porsi 100); agent yang sama = tanpa perubahan. Batas `MAX_AGENTS_PER_SCHOOL`. Audit ASSIGN/UNASSIGN. |
+| GET | `/retention-targets` | `{ items:[{year,targetPercent,isDefault,cohortValue,signedValue,retention,status: NONE\|ON_TARGET\|BELOW}] }` dari modul retention B1 |
+| PUT | `/retention-targets/:year` | `{ targetPercent }` (0–100), dikembalikan daftar terbaru |
