@@ -1,0 +1,9 @@
+// Kerangka awal. Model lengkap disalin dari docs/data-model.md di langkah 2.
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "mysql"
+}

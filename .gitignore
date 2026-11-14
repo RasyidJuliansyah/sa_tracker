@@ -22,3 +22,6 @@ storage/
 /backend/dist
 uploads/
 *.pid
+
+# Prisma Client hasil generate
+backend/src/generated/
