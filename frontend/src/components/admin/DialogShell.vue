@@ -23,7 +23,7 @@ const open = defineModel<boolean>({ default: false })
 
 <style scoped>
 .dialog-shell { padding: 24px; border: 0; }
-.dialog-shell__head { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 16px; }
+.dialog-shell__head { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 20px; }
 .dialog-shell__title { font-size: 20px; line-height: 28px; font-weight: 600; }
 .dialog-shell__subtitle { margin-top: 2px; font-size: 12px; line-height: 16px; color: rgb(var(--v-theme-text-secondary)); }
 .dialog-shell__close { display: inline-flex; margin: 4px 4px 0 0; border-radius: 5px; color: rgb(var(--v-theme-text-secondary)); }

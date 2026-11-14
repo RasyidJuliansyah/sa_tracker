@@ -51,7 +51,7 @@ async function copy() {
 </template>
 
 <style scoped>
-.reset__text { font-size: 14px; line-height: 20px; margin-bottom: 20px; }
+.reset__text { max-width: 420px; font-size: 14px; line-height: 20px; margin-bottom: 20px; }
 .reset__password {
   display: flex; align-items: center; justify-content: space-between; height: 48px; padding: 0 16px;
   border-radius: 5px; background: rgb(var(--v-theme-canvas-table)); margin-bottom: 20px;
