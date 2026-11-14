@@ -5,6 +5,9 @@ import { errorHandler, notFoundHandler } from './middleware/error-handler.js'
 import { requestLog } from './middleware/request-log.js'
 import { originCheck } from './middleware/auth.js'
 import { authRouter } from './routes/auth.routes.js'
+import { auditRouter } from './routes/audit.routes.js'
+import { masterRouter } from './routes/master.routes.js'
+import { usersRouter } from './routes/users.routes.js'
 import { healthRouter } from './routes/health.routes.js'
 
 export function createApp() {
@@ -15,6 +18,9 @@ export function createApp() {
   app.set('trust proxy', 1)
   app.use('/api', originCheck)
   app.use('/api', authRouter)
+  app.use('/api', usersRouter)
+  app.use('/api', masterRouter)
+  app.use('/api', auditRouter)
   app.use('/api/health', healthRouter)
   app.use(notFoundHandler)
   app.use(errorHandler)
