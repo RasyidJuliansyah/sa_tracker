@@ -1,4 +1,5 @@
 import type { Visit } from '@/mocks/agent'
+import { wibDateKey } from '@/utils/timezone'
 
 // Aturan murni kunjungan agent (tanpa Vue/Pinia supaya mudah dites).
 
@@ -56,4 +57,42 @@ export function checkOutRejection(report: string): string | null {
 export function formatCoordinates(lat: number, lng: number): string {
   const f = (n: number) => n.toLocaleString('id-ID', { minimumFractionDigits: 5, maximumFractionDigits: 5 }).replace('-', '−')
   return `${f(lat)}, ${f(lng)}`
+}
+
+export type HistoryRange = 'all' | 'week' | 'month'
+
+/** Senin dari minggu yang memuat tanggal WIB (yyyy-mm-dd), minggu Senin-Minggu. */
+export function weekStartKey(dateKey: string): string {
+  const d = new Date(`${dateKey}T00:00:00Z`)
+  const back = (d.getUTCDay() + 6) % 7
+  d.setUTCDate(d.getUTCDate() - back)
+  return d.toISOString().slice(0, 10)
+}
+
+/** Saring kunjungan menurut hari WIB: semua, minggu berjalan (Senin-Minggu), atau bulan kalender berjalan. */
+export function filterVisitsByRange(visits: Visit[], range: HistoryRange, now: Date): Visit[] {
+  if (range === 'all') return visits
+  const today = wibDateKey(now)
+  if (range === 'month') return visits.filter((v) => wibDateKey(v.checkInAt).slice(0, 7) === today.slice(0, 7))
+  const start = weekStartKey(today)
+  const end = new Date(`${start}T00:00:00Z`)
+  end.setUTCDate(end.getUTCDate() + 6)
+  const endKey = end.toISOString().slice(0, 10)
+  return visits.filter((v) => {
+    const k = wibDateKey(v.checkInAt)
+    return k >= start && k <= endKey
+  })
+}
+
+/** Kelompokkan per hari WIB, hari terbaru di atas dan kunjungan terbaru di atas dalam hari. */
+export function groupVisitsByDay(visits: Visit[]): { day: string; visits: Visit[] }[] {
+  const sorted = [...visits].sort((a, b) => b.checkInAt.localeCompare(a.checkInAt))
+  const groups: { day: string; visits: Visit[] }[] = []
+  for (const v of sorted) {
+    const day = wibDateKey(v.checkInAt)
+    const last = groups[groups.length - 1]
+    if (last && last.day === day) last.visits.push(v)
+    else groups.push({ day, visits: [v] })
+  }
+  return groups
 }

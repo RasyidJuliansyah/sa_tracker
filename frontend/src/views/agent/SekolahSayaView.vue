@@ -22,7 +22,7 @@ const cards = computed(() =>
     const status = renewalStatus(d.contracts, today.value)
     const focus = focusContract(d.contracts, today.value)
     const retention = focus && signedRenewalOf(focus, d.contracts) ? formatPercent(contractRetention(focus, d.contracts)) : null
-    return { id: s.id, name: s.name, meta: `${d.level} · Paket ${d.packageName} · ${s.city}`, status, retention, last: formatLastVisit(latestVisitAt(store.visits, s.id, d.lastVisitAt), store.now) }
+    return { id: s.id, name: s.name, meta: `${d.level} · Paket ${d.packageName} · ${s.city}`, status, retention, last: formatLastVisit(latestVisitAt(store.visits, s.id, d.lastVisitAt, `${today.value}T00:00:00+07:00`), store.now) }
   }),
 )
 const total = computed(() => agentService.assignedSchoolIds().length)

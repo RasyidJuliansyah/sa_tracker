@@ -36,9 +36,12 @@ export function formatLastVisit(iso: string | null, now: Date): string {
   return `Terakhir dikunjungi ${text}`
 }
 
-/** Waktu kunjungan terakhir sekolah: terbaru dari state kunjungan, atau cadangan dari data sekolah. */
-export function latestVisitAt(visits: Visit[], schoolId: number, fallback: string | null): string | null {
-  const times = visits.filter((v) => v.schoolId === schoolId).map((v) => v.checkInAt)
+/**
+ * Waktu kunjungan terakhir sekolah: terbaru antara data sekolah dan kunjungan yang tercatat sejak `since`
+ * (kunjungan hari ini atau yang dibuat di sesi ini). Riwayat tiruan lama sengaja tidak dipakai di sini.
+ */
+export function latestVisitAt(visits: Visit[], schoolId: number, fallback: string | null, since: string): string | null {
+  const times = visits.filter((v) => v.schoolId === schoolId && v.checkInAt >= since).map((v) => v.checkInAt)
   if (fallback) times.push(fallback)
   return times.sort().pop() ?? null
 }
