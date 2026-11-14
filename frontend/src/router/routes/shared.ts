@@ -6,7 +6,7 @@ const Placeholder = () => import('@/views/shared/PlaceholderView.vue')
 
 export const managerRoutes: RouteRecordRaw[] = [
   { path: '/dashboard', name: 'dashboard', component: Placeholder, meta: { title: 'Dashboard' } },
-  { path: '/rekap', name: 'rekap', component: Placeholder, meta: { title: 'Rekap kunjungan' } },
-  { path: '/rekap/:id', name: 'rekap-detail', component: Placeholder, meta: { title: 'Detail kunjungan' } },
-  { path: '/akun-agent', name: 'akun-agent', component: Placeholder, meta: { title: 'Akun agent' } },
+  { path: '/rekap', name: 'rekap', component: () => import('@/views/manager/RekapView.vue'), meta: { title: 'Rekap kunjungan' } },
+  { path: '/rekap/:id', name: 'rekap-detail', component: () => import('@/views/manager/VisitDetailView.vue'), meta: { title: 'Detail kunjungan' } },
+  { path: '/akun-agent', name: 'akun-agent', component: () => import('@/views/manager/AkunAgentView.vue'), meta: { title: 'Akun agent' } },
 ]
