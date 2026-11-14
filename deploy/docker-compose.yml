@@ -1,0 +1,33 @@
+# Produksi: dua container (backend, frontend). Database MySQL ada di luar (server internal Skolla).
+# Jalankan dari folder deploy/:  docker compose --env-file .env.production up -d --build
+# Rahasia ada di .env.production (di luar git, tidak masuk image). Contoh: .env.production.example
+name: sa-visit
+
+services:
+  backend:
+    container_name: sa-visit-backend
+    build: { context: ../backend }
+    env_file: .env.production
+    environment:
+      NODE_ENV: production
+      PORT: "3011"
+      PHOTO_STORAGE_DIR: /data/photos
+    ports: ["127.0.0.1:3011:3011"]   # hanya Nginx di host yang boleh mengakses
+    volumes:
+      - ${PHOTO_HOST_DIR:?isi PHOTO_HOST_DIR di .env.production}:/data/photos   # harus bisa ditulis uid 1000
+    restart: unless-stopped
+    read_only: true
+    tmpfs: [/tmp]
+    security_opt: ["no-new-privileges:true"]
+    cap_drop: [ALL]
+
+  frontend:
+    container_name: sa-visit-frontend
+    build: { context: .., dockerfile: frontend/Dockerfile }
+    ports: ["127.0.0.1:3010:8080"]
+    depends_on: [backend]
+    restart: unless-stopped
+    read_only: true
+    tmpfs: [/tmp]
+    security_opt: ["no-new-privileges:true"]
+    cap_drop: [ALL]

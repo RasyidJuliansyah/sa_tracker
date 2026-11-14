@@ -4,6 +4,7 @@ build/
 .env
 .env.*
 !.env.example
+!.env.production.example
 .claude/settings.local.json
 .DS_Store
 coverage/

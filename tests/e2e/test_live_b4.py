@@ -185,3 +185,13 @@ def test_impor_csv_pratinjau_lalu_simpan_dan_ekspor(page: Page, tmp_path) -> Non
         page.get_by_role("button", name="Unduh CSV").first.click()
     assert npsn in open(dl.value.path(), encoding="utf-8-sig").read()
     expect(page.get_by_test_id("export-log").first).to_contain_text("Data sekolah")
+
+
+def test_keluar_menghapus_sesi(page: Page) -> None:
+    login(page, "manager@skolla.test")
+    expect(page).to_have_url(re.compile(r"/dashboard$"))
+    page.get_by_test_id("menu-akun").click()
+    page.get_by_test_id("keluar").click()
+    expect(page).to_have_url(re.compile(r"/login$"))
+    page.goto("/dashboard")
+    expect(page).to_have_url(re.compile(r"/login$"))  # cookie sudah dihapus

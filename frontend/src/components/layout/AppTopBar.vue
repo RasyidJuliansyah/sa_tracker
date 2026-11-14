@@ -13,18 +13,30 @@ const session = useSessionStore()
       <div class="app-bar__right">
         <button type="button" class="app-bar__bell" aria-label="Notifikasi"><v-icon icon="mdi-bell-outline" size="22" /></button>
         <span class="app-bar__divider" aria-hidden="true" />
-        <span class="app-bar__avatar" aria-hidden="true">{{ session.initials }}</span>
-        <div class="app-bar__user">
-          <p class="app-bar__name">{{ session.name }}</p>
-          <p class="app-bar__role">{{ session.roleLabel }}</p>
-        </div>
-        <v-icon icon="mdi-chevron-down" size="20" />
+        <v-menu location="bottom end">
+          <template #activator="{ props: menu }">
+            <button v-bind="menu" type="button" class="app-bar__account" aria-label="Menu akun" data-testid="menu-akun">
+              <span class="app-bar__avatar" aria-hidden="true">{{ session.initials }}</span>
+              <span class="app-bar__user">
+                <span class="app-bar__name">{{ session.name }}</span>
+                <span class="app-bar__role">{{ session.roleLabel }}</span>
+              </span>
+              <v-icon icon="mdi-chevron-down" size="20" />
+            </button>
+          </template>
+          <v-list density="compact">
+            <v-list-item prepend-icon="mdi-logout" title="Keluar" data-testid="keluar" @click="session.logout()" />
+          </v-list>
+        </v-menu>
       </div>
     </div>
   </v-app-bar>
 </template>
 
 <style scoped>
+.app-bar__account { display: flex; align-items: center; gap: 12px; text-align: left; }
+.app-bar__user { display: flex; flex-direction: column; }
+.app-bar__name, .app-bar__role { display: block; }
 .app-bar__inner {
   display: flex;
   align-items: center;

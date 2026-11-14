@@ -34,9 +34,11 @@ export const useSessionStore = defineStore('session', () => {
     user.value = (await api<{ user: SessionUser }>('/auth/login', { method: 'POST', body: { email, password } })).user
     loaded.value = true
   }
+  /** Keluar: hapus cookie di server lalu muat ulang ke /login agar seluruh state (data acuan, cache agent) bersih. */
   async function logout() {
-    await api('/auth/logout', { method: 'POST' })
+    if (!MOCK_AUTH) await api('/auth/logout', { method: 'POST' }).catch(() => undefined)
     user.value = null
+    window.location.assign('/login')
   }
   function setMock(r: Role) {
     user.value = { id: 0, name: MOCK_NAMES[r], email: `${r.toLowerCase()}@mock.local`, role: r, timezone: 'WIB', mustChangePassword: false }

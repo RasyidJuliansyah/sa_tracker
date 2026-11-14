@@ -15,12 +15,22 @@ const session = useSessionStore()
         <v-icon icon="mdi-chevron-left" size="24" />
       </button>
       <h1 class="mobile-bar__title">{{ title }}</h1>
-      <span class="mobile-bar__avatar" aria-hidden="true">{{ session.initials }}</span>
+      <v-menu location="bottom end">
+        <template #activator="{ props: menu }">
+          <button v-bind="menu" type="button" class="mobile-bar__account" aria-label="Menu akun" data-testid="menu-akun">
+            <span class="mobile-bar__avatar" aria-hidden="true">{{ session.initials }}</span>
+          </button>
+        </template>
+        <v-list density="compact">
+          <v-list-item prepend-icon="mdi-logout" title="Keluar" data-testid="keluar" @click="session.logout()" />
+        </v-list>
+      </v-menu>
     </div>
   </v-app-bar>
 </template>
 
 <style scoped>
+.mobile-bar__account { display: inline-flex; border-radius: 50%; }
 .mobile-bar__inner {
   display: flex;
   align-items: center;
