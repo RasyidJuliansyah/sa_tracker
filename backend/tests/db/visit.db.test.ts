@@ -85,6 +85,15 @@ describe.skipIf(!ok)('check-in, check-out, foto (database uji)', () => {
     expect((await call('agent', `/api/visits/${id}/check-out`, 'POST', { report: 'lagi' })).status).toBe(409)
     expect(await prisma.auditLog.count({ where: { action: 'CHECK_OUT', entityId: id } })).toBe(1)
   })
+  it('admin boleh melihat data kunjungan dan foto (keputusan pemilik produk); agent lain tetap tidak', async () => {
+    const mine = await (await call('agent', '/api/visits')).json()
+    const id = mine.items[0].id
+    expect((await call('admin', '/api/visits')).status).toBe(200)
+    expect((await call('admin', `/api/visits/${id}`)).status).toBe(200)
+    expect((await call('admin', `/api/visits/${id}/photo`)).status).toBe(200)
+    expect((await call('admin', '/api/export/visits')).status).toBe(200)
+    expect((await call('agent2', `/api/visits/${id}`)).status).toBe(404)
+  })
   it('akses: agent hanya kunjungan sendiri; admin/manager semua; foto dijaga', async () => {
     const mine = await (await call('agent', '/api/visits')).json()
     expect(mine.items.every((v: { agentId: number }) => v.agentId === ids.agent)).toBe(true)
