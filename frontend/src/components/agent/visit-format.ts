@@ -1,4 +1,4 @@
-import { IANA_ZONE, formatClock } from '@/utils/timezone'
+import { IANA_ZONE, formatClock, wibDateKey } from '@/utils/timezone'
 import { formatDuration } from '@/utils/format'
 import type { Visit } from '@/mocks/agent'
 
@@ -26,4 +26,19 @@ export function formatVisitClockRange(visit: Visit): string {
 export function formatVisitMeta(visit: Visit, now: Date): string {
   const tail = visit.status === 'ONGOING' ? 'berjalan' : formatDuration(visitMinutes(visit, now))
   return `${formatVisitDay(visit.checkInAt)} · ${formatVisitClockRange(visit)} · ${tail}`
+}
+
+/** "hari ini" bila kunjungan terakhir di hari WIB yang sama dengan sekarang, selain itu "12 Nov 2026". */
+export function formatLastVisit(iso: string | null, now: Date): string {
+  if (!iso) return 'Belum pernah dikunjungi'
+  const same = wibDateKey(iso) === wibDateKey(now)
+  const text = same ? 'hari ini' : new Intl.DateTimeFormat('id-ID', { day: 'numeric', month: 'short', year: 'numeric', timeZone: IANA_ZONE.WIB }).format(new Date(iso))
+  return `Terakhir dikunjungi ${text}`
+}
+
+/** Waktu kunjungan terakhir sekolah: terbaru dari state kunjungan, atau cadangan dari data sekolah. */
+export function latestVisitAt(visits: Visit[], schoolId: number, fallback: string | null): string | null {
+  const times = visits.filter((v) => v.schoolId === schoolId).map((v) => v.checkInAt)
+  if (fallback) times.push(fallback)
+  return times.sort().pop() ?? null
 }
