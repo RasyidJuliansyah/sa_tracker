@@ -43,6 +43,7 @@ def test_admin_login_lalu_kelola_akun(page: Page) -> None:
     page.fill("#acc-name", "Akun Uji Live")
     page.fill("#acc-email", email)
     page.get_by_role("button", name="Buat akun").click()
+    page.fill("#f-cari", email)  # daftar bertambah tiap uji; cari agar tidak terdorong ke halaman lain
     expect(page.get_by_text(email)).to_be_visible()
 
 
@@ -141,3 +142,19 @@ def test_agent_check_in_check_out_dan_manager_melihat_rekap(browser, base_url: s
     expect(mp.get_by_text(laporan)).to_be_visible()
     expect(mp.get_by_alt_text("Foto bukti kunjungan")).to_be_visible()
     mgr.close()
+
+
+# ---- B8: dashboard dari API ----
+def test_dashboard_manager_memuat_data_nyata(page: Page) -> None:
+    login(page, "manager@skolla.test")
+    expect(page).to_have_url(re.compile(r"/dashboard$"))
+    expect(page.locator(".stat-card__label", has_text="Perpanjangan ditandatangani")).to_be_visible()
+    expect(page.get_by_text("Citra Agent").first).to_be_visible()
+    page.get_by_role("tab", name="Hari").click()
+    expect(page.locator(".stat-card__label", has_text="Kunjungan selesai")).to_be_visible()
+
+
+def test_beranda_agent_memuat_data_nyata(page: Page) -> None:
+    login(page, "citra@skolla.test")
+    expect(page.get_by_role("heading", name="Halo, Citra")).to_be_visible()
+    expect(page.get_by_text("Kontrak perlu perhatian")).to_be_visible()

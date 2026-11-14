@@ -8,36 +8,43 @@ import DashToolbar from '@/components/dashboard/DashToolbar.vue'
 import PeriodVisitsCard from '@/components/dashboard/PeriodVisitsCard.vue'
 import RetentionCard from '@/components/dashboard/RetentionCard.vue'
 import UnvisitedCard from '@/components/dashboard/UnvisitedCard.vue'
-import { comparisonSentence, MOCK_TODAY, periodRange, type PeriodKey } from '@/components/dashboard/period'
+import { comparisonSentence, periodRange, type PeriodKey } from '@/components/dashboard/period'
 import StatCard from '@/components/StatCard.vue'
 import type { ChartTab } from '@/mocks/dashboard'
-import { getAnnualRetention, getAttention, getChart, getPeriodStats, getRanking, getUnvisited, listDashAgents, listPeriodVisits } from '@/services/dashboard'
+import { dashboardToday, listPeriodVisits, loadDashboard, type DashData } from '@/services/dashboard'
 import type { VisitRow } from '@/services/manager'
 
-// Dashboard manager (Figma: Manager – Dashboard). Data tiruan lewat services/dashboard.ts.
-const agents = listDashAgents()
+// Dashboard manager (Figma: Manager – Dashboard). Satu pemuatan data per periode lewat services/dashboard.ts.
 const period = ref<PeriodKey>('week')
 const offset = ref(0)
 const tab = ref<ChartTab>('visits')
 const selectedAgents = ref<number[]>([])
 const rows = ref<VisitRow[]>([])
+const data = ref<DashData | null>(null)
 
-const range = computed(() => periodRange(period.value, MOCK_TODAY, offset.value))
-const sentence = computed(() => comparisonSentence(period.value, MOCK_TODAY, offset.value))
-const annual = getAnnualRetention()
-const stats = computed(() => getPeriodStats(period.value))
-const chart = computed(() => getChart(period.value, tab.value))
-const ranking = computed(() => getRanking(selectedAgents.value))
-const attention = computed(() => getAttention(selectedAgents.value))
-const unvisited = computed(() => getUnvisited(selectedAgents.value))
-const contribAgents = computed(() => agents.filter((a) => !selectedAgents.value.length || selectedAgents.value.includes(a.id)))
+const today = dashboardToday()
+const range = computed(() => periodRange(period.value, today, offset.value))
+const sentence = computed(() => comparisonSentence(period.value, today, offset.value))
+const agents = computed(() => data.value?.agents ?? [])
+const annual = computed(() => data.value?.annual)
+const stats = computed(() => data.value?.stats)
+const chart = computed(() => data.value?.charts[tab.value])
+const ids = <T extends { agentId?: number; id?: number }>(rows_: T[], key: 'agentId' | 'id'): T[] => (selectedAgents.value.length ? rows_.filter((r) => selectedAgents.value.includes(Number(r[key]))) : rows_)
+const ranking = computed(() => ids(agents.value, 'id').slice().sort((a, b) => b.retentionPct - a.retentionPct))
+const attention = computed(() => {
+  const names = agents.value.filter((a) => !selectedAgents.value.length || selectedAgents.value.includes(a.id)).map((a) => a.name.split(' ')[0]!)
+  return (data.value?.attention ?? []).filter((i) => !selectedAgents.value.length || names.includes(i.agent))
+})
+const unvisited = computed(() => ids(data.value?.unvisited ?? [], 'agentId'))
+const contribAgents = computed(() => ids(agents.value, 'id'))
 
 watch(period, () => (offset.value = 0))
+watch([period, offset], async () => (data.value = await loadDashboard(period.value, offset.value)), { immediate: true })
 watch([range, selectedAgents], async () => (rows.value = await listPeriodVisits(range.value, selectedAgents.value)), { immediate: true })
 </script>
 
 <template>
-  <div class="dash">
+  <div v-if="data && annual && stats && chart" class="dash">
     <DashToolbar v-model:period="period" v-model:selected="selectedAgents" :label="range.label" :agents="agents" @prev="offset--" @next="offset++" />
     <p class="dash__caption">{{ sentence }}</p>
 

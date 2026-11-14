@@ -42,6 +42,7 @@ const cards = computed(() => {
     { label: 'Rata-rata durasi', value: formatDuration(s.avgDurationMinutes.value), change: delta(s.avgDurationMinutes.value, s.avgDurationMinutes.previous, formatDuration), vs: `vs ${formatDuration(s.avgDurationMinutes.previous)}` },
   ]
 })
+const unvisitedList = computed(() => agentService.unvisitedSchools(period.value))
 const periodNoun = computed(() => ({ day: 'hari ini', week: 'minggu ini', month: 'bulan ini' })[period.value])
 const total = computed(() => summary.value.assignedVisits + summary.value.otherVisits)
 const assignedWidth = computed(() => (total.value ? (summary.value.assignedVisits / total.value) * 100 : 0))
@@ -120,9 +121,9 @@ const ongoingText = computed(() => {
     </SectionCard>
 
     <SectionCard :title="`Belum dikunjungi ${periodNoun}`" subtitle="Sekolah yang ditugaskan kepada Anda">
-      <template #action><StatusChip :label="String(agentService.unvisitedSchools().length)" tone="warning" /></template>
+      <template #action><StatusChip :label="String(unvisitedList.length)" tone="warning" /></template>
       <div>
-        <IconRow v-for="(s, i) in agentService.unvisitedSchools()" :key="s.schoolId" :title="s.name" :subtitle="`Terakhir dikunjungi ${s.lastVisit}`" icon="mdi-school-outline" :to="`/agent/sekolah/${s.schoolId}`" :last="i === agentService.unvisitedSchools().length - 1" />
+        <IconRow v-for="(s, i) in unvisitedList" :key="s.schoolId" :title="s.name" :subtitle="s.lastVisit === 'belum pernah' ? 'Belum pernah dikunjungi' : `Terakhir dikunjungi ${s.lastVisit}`" icon="mdi-school-outline" :to="`/agent/sekolah/${s.schoolId}`" :last="i === unvisitedList.length - 1" />
       </div>
     </SectionCard>
 

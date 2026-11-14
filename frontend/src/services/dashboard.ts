@@ -1,24 +1,23 @@
-// Lapisan layanan Dashboard manager. Sekarang membaca data tiruan; nanti diganti panggilan API.
-import { listVisits, type VisitRow } from '@/services/manager'
-import { chartFor, annualRetention, attentionItems, dashAgents, periodStats, unvisitedSchools, type ChartData, type ChartTab, type DashAgent, type PeriodStats, type UnvisitedSchool } from '@/mocks/dashboard'
-import { inRange, type PeriodKey, type PeriodRange } from '@/components/dashboard/period'
+// Pintu masuk Dashboard manager: data tiruan di mode dev:mock, selain itu API sungguhan.
+import { MOCK_TODAY, type PeriodKey } from '@/components/dashboard/period'
+import { MOCK_AUTH } from '@/stores/session'
+import { wibDateKey } from '@/utils/timezone'
+import { loadDashboard as loadApi } from './dashboard.api'
+import { listPeriodVisits as listMockVisits, loadDashboardMock } from './dashboard.mock'
+import type { DashData } from './dashboard.types'
+import { listVisits } from './manager'
+import { inRange, type PeriodRange } from '@/components/dashboard/period'
 
-/** agentIds kosong = semua agent */
-const pick = <T extends { agentId?: number; id?: number }>(rows: T[], agentIds: number[], key: 'agentId' | 'id') =>
-  agentIds.length ? rows.filter((r) => agentIds.includes(Number(r[key]))) : rows
+export type { DashData } from './dashboard.types'
 
-export const listDashAgents = (): DashAgent[] => dashAgents
-export const getAnnualRetention = () => annualRetention
-export const getAttention = (agentIds: number[]) => {
-  const names = dashAgents.filter((a) => !agentIds.length || agentIds.includes(a.id)).map((a) => a.name.split(' ')[0]!)
-  return attentionItems.filter((i) => names.includes(i.agent))
-}
-export const getPeriodStats = (kind: PeriodKey): PeriodStats => periodStats[kind]
-export const getChart = (kind: PeriodKey, tab: ChartTab): ChartData => chartFor(kind, tab)
-export const getRanking = (agentIds: number[]): DashAgent[] => pick(dashAgents, agentIds, 'id').slice().sort((a, b) => b.retentionPct - a.retentionPct)
-export const getUnvisited = (agentIds: number[]): UnvisitedSchool[] => pick(unvisitedSchools, agentIds, 'agentId')
+/** "Hari ini" untuk periode: tanggal tiruan di mode dev:mock, selain itu tanggal WIB sekarang. */
+export const dashboardToday = (): string => (MOCK_AUTH ? MOCK_TODAY : wibDateKey(new Date()))
 
-export async function listPeriodVisits(range: PeriodRange, agentIds: number[]): Promise<VisitRow[]> {
-  const rows = await listVisits({ from: null, to: null, agentId: null, schoolId: null, status: null })
+export const loadDashboard = (kind: PeriodKey, offset: number): Promise<DashData> => (MOCK_AUTH ? loadDashboardMock(kind) : loadApi(kind, offset))
+
+/** Tabel kunjungan periode (semua atau agent terpilih). */
+export async function listPeriodVisits(range: PeriodRange, agentIds: number[]) {
+  if (MOCK_AUTH) return listMockVisits(range, agentIds)
+  const rows = await listVisits({ from: range.start, to: range.end, agentId: null, schoolId: null, status: null })
   return rows.filter((r) => inRange(r.dateKey, range) && (!agentIds.length || agentIds.includes(r.agentId)))
 }
