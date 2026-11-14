@@ -12,12 +12,14 @@ import { schoolRouter } from './routes/school.routes.js'
 import { assignmentRouter } from './routes/assignment.routes.js'
 import { visitRouter } from './routes/visit.routes.js'
 import { dashboardRouter } from './routes/dashboard.routes.js'
+import { csvRouter } from './routes/csv.routes.js'
 import { healthRouter } from './routes/health.routes.js'
 
 export function createApp() {
   const app = express()
   app.use(requestLog)
   app.use(cors({ origin: config.corsOrigin, credentials: true }))
+  app.use('/api/import', express.json({ limit: '6mb' }))
   app.use(express.json())
   app.set('trust proxy', 1)
   app.use('/api', originCheck)
@@ -29,6 +31,7 @@ export function createApp() {
   app.use('/api', assignmentRouter)
   app.use('/api', visitRouter)
   app.use('/api', dashboardRouter)
+  app.use('/api', csvRouter)
   app.use('/api/health', healthRouter)
   app.use(notFoundHandler)
   app.use(errorHandler)

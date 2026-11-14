@@ -68,3 +68,16 @@ Query: `period=day|week|month` (default week), `offset` (0 = periode ini, −1 =
 | GET | `/dashboard/manager` | ADMIN, MANAGER | `{ today, period, previous, annual:{year,targetPercent,cohortValue,retainedValue,percent,targetValue,decidedValue,decidedRetained,status,breakdown:{renewed,lapsed,pending}}, agents:[{id,name,timezone,schools,retentionPct,status,retainedValue,cohortValue,contributionPct,visits,unvisited}], stats:{current,previous}, chart:{labels,now,before}, attention[], unvisited[] }` |
 | GET | `/dashboard/agent` | AGENT | `{ today, period, previous, retention, stats:{current,previous}, unvisited[], attention[] }` hanya data agent itu (sekolah yang sedang ditugaskan) |
 `stats.*`: `{ visits, ongoing, schools, completed, durationMinutes, renewalValue, assignedVisits, otherVisits }`. `attention`: kontrak lewat tempo (`lapsed`) atau ≤ 60 hari (`soon`) yang belum diperpanjang. `unvisited`: sekolah bertugas yang tidak dikunjungi siapa pun pada periode terpilih (+ `lastVisitAt`). Perpanjangan per periode dihitung dari tanggal tanda tangan.
+
+## Impor dan ekspor CSV (B9)
+Peran: ADMIN, MANAGER. Impor memakai JSON `{ csv }` (teks file, maks 5 MB, 2000 baris). Kolom: `npsn, nama_sekolah, jenjang, paket, zona_waktu, kota, alamat, pic, kontak_pic, id_lms, tanggal_ttd, tanggal_mulai, tanggal_berakhir, nilai_kontrak`.
+| Metode | Path | Keterangan |
+|---|---|---|
+| GET | `/import/schools/template` | CSV template |
+| POST | `/import/schools/preview` | `{ rows:[{line,npsn,...,isNew,ok,message}], fileError }`, tanpa menyimpan. Jenjang/paket dicocokkan nama dengan master aktif. |
+| POST | `/import/schools/commit` | `{ created, updated, failed:[{line,message}] }`. Satu transaksi per baris; NPSN yang ada diperbarui (kontrak tidak disentuh), baru = sekolah + kontrak pertama. Audit `IMPORT` per baris + ringkasan. |
+| GET | `/export/schools?jenjangId&status&label` | CSV UTF-8 BOM, sel `= + - @ tab CR` dinetralkan; audit `EXPORT` |
+| GET | `/export/contracts?year&agentId&label` | Riwayat kontrak + retention per kontrak |
+| GET | `/export/visits?from&to&agentId&label` | Rekap kunjungan (jam WIB) |
+| GET | `/export/log` | 50 ekspor terakhir `{ id, at, actor, kind, filter, rows }` |
+Ekspor: `dryRun=1` hanya mengembalikan `{ rows }` tanpa unduhan dan tanpa audit; header `X-Row-Count` pada unduhan.
