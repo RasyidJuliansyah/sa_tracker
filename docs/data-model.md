@@ -1,0 +1,317 @@
+# Draf model data
+
+Status: draf revisi 8. Lolos validasi dengan validator schema Prisma (paket WASM versi terbaru di npm, dicek 14 November 2026). Belum dimigrasikan ke database sungguhan.
+
+## Tabel
+
+| Tabel | Primary key | Isi |
+|---|---|---|
+| `users` | `user_id` | Akun admin, manager, agent, beserta zona waktunya |
+| `jenjang` | `jenjang_id` | Master jenjang, diisi admin |
+| `packages` | `package_id` | Master paket Skolla, diisi admin |
+| `schools` | `school_id` | Data sekolah klien |
+| `school_contracts` | `contract_id` | Kontrak per sekolah (kontrak awal dan perpanjangan): tanggal tanda tangan, mulai, berakhir, nilai kontrak |
+| `retention_targets` | `retention_target_id` | Persentase target retention per tahun (default 65) |
+| `school_assignments` | `assignment_id` | Penugasan sekolah ke agent beserta riwayat dan porsinya |
+| `visits` | `visit_id` | Kunjungan agent ke sekolah |
+| `audit_logs` | `log_id` | Riwayat perubahan data transaksi dan kejadian login |
+
+Semua primary key `INT AUTO_INCREMENT`. Di MySQL nama kolomnya `<entitas>_id`, sedangkan di kode Prisma tetap diakses sebagai `id`. Nama tabel dan kolom memakai snake_case lewat `@@map` dan `@map`.
+
+## Keputusan yang tercermin di sini
+
+- **ID LMS Skolla** disimpan di `schools.lms_school_id` sebagai `INT`, boleh kosong, dan unik jika diisi. Bukan foreign key sungguhan karena tabel LMS ada di database lain. Jika kolom ID di database LMS ternyata `INT UNSIGNED` atau `BIGINT`, tipe di sini perlu disamakan.
+- **Jenjang dan paket** jadi tabel master yang diisi admin. Data yang sudah dipakai sekolah dinonaktifkan, tidak dihapus.
+- **Empat tanggal kerja sama** di `schools`: `partnership_start_date` (wajib), `onboarding_date`, `active_since_date`, dan `partnership_end_date`.
+- **Kontrak** disimpan per baris di `school_contracts`. Tanggal mulai dan berakhir diisi manual sesuai dokumen kontrak, jadi durasinya bisa berbeda. Nilai kontrak berlaku penuh untuk seluruh durasi, tidak diprorata. Kontrak berjalan = kontrak yang periodenya mencakup hari ini. Periode dalam satu sekolah tidak boleh tumpang tindih (dicek di service).
+- **Perpanjangan** adalah baris `RENEWAL` yang menunjuk kontrak yang diperpanjangnya lewat `previous_contract_id` (unik: satu kontrak paling banyak satu perpanjangan) dan wajib punya `signed_date`. Hubungan eksplisit ini membuat retention tidak bergantung pada tebakan tanggal.
+- **Retention** satu kontrak = `contract_value` perpanjangannya ÷ `contract_value` kontrak itu, dihitung sejak `signed_date` perpanjangan. Tidak dibatasi 100%.
+- **Kohort tahun T** = kontrak yang `contract_end_date`-nya jatuh di tahun T (kalender, WIB). Target tahun T = `retention_targets.target_percent` × total nilai kontrak kohort. Jika tahun itu belum punya baris di `retention_targets`, pakai 65.
+- **Retention agent** dihitung dari kontrak kohort milik sekolah yang sedang ditugaskan kepadanya, dikali `share_percent`.
+- **Penugasan sekolah** opsional dan banyak-ke-banyak. Batas agent aktif per sekolah diatur konstanta `MAX_AGENTS_PER_SCHOOL` (MVP: 1), ditegakkan di service.
+- **Audit log** di `audit_logs` hanya ditambah, tidak pernah diubah atau dihapus oleh aplikasi. Kolom `changes` (JSON) menyimpan nilai sebelum dan sesudah.
+- **Zona waktu** memakai enum `WIB`, `WITA`, `WIT`. Saat check-in, zona waktu agent disalin ke `visits.timezone`.
+- **Login** memakai email kantor dan password. Akun hanya dibuat admin, dengan `must_change_password` untuk login pertama.
+- **Foto** disimpan di disk server. Database hanya menyimpan path relatifnya.
+- **Pencatatan revenue per transaksi** (tabel `school_revenues` di revisi sebelumnya) dan **target manual per agent** (`agent_targets`) dihapus dari MVP. Pembayaran termin akan dirancang ulang di Fase 2.
+
+## Data yang dicatat di audit log
+
+| Entitas | Kejadian |
+|---|---|
+| `users` | CREATE, UPDATE (termasuk ganti peran dan zona waktu), DEACTIVATE, PASSWORD_CHANGE, LOGIN, LOGIN_FAILED |
+| `schools` | CREATE, UPDATE, IMPORT (satu log per baris yang dibuat atau diubah lewat CSV) |
+| `school_contracts` | CREATE (kontrak awal atau perpanjangan), UPDATE |
+| `retention_targets` | CREATE, UPDATE |
+| `school_assignments` | ASSIGN, UNASSIGN, UPDATE (perubahan porsi) |
+| `visits` | CHECK_IN, CHECK_OUT |
+| `jenjang`, `packages` | CREATE, UPDATE, DEACTIVATE |
+| Ekspor CSV | EXPORT (jenis data, filter yang dipakai, jumlah baris), dengan `entity_id` kosong |
+
+Penulisan audit log berada di transaksi yang sama dengan perubahan datanya. Jika log gagal ditulis, perubahan ikut dibatalkan.
+
+## Catatan Prisma 7
+
+Proyek memakai Node.js 24 LTS dan Prisma 7.
+
+Schema ini disalin ke `backend/prisma/schema.prisma`. Di produksi, struktur database dibuat dan diubah lewat skrip SQL delta di `backend/sql/deltas/`, bukan `prisma migrate`. Lihat `docs/architecture.md`.
+
+Validator terbaru menolak `url = env("DATABASE_URL")` di blok `datasource`. Sejak Prisma 7, URL koneksi dipindah ke `prisma.config.ts`, dan `PrismaClient` dibuat dengan driver adapter (untuk MySQL kemungkinan `@prisma/adapter-mariadb`). Karena itu baris `url` sengaja tidak ada di draf ini. Ikuti dokumentasi resmi untuk versi yang terpasang, termasuk nama provider generator.
+
+## Hal yang belum final
+
+- Aturan "satu agent hanya boleh punya satu kunjungan `ONGOING`" ditegakkan di service, di dalam transaksi, karena MySQL tidak punya partial unique index.
+- Tabel `audit_logs` akan terus membesar. Perlu kebijakan retensi atau arsip setelah aplikasi berjalan beberapa bulan.
+
+## Schema
+
+```prisma
+// DRAF model data sa-visit-tracker (revisi 8).
+// Semua primary key: Int AUTO_INCREMENT, nama kolom <entitas>_id.
+// Nama tabel dan kolom di MySQL memakai snake_case lewat @@map dan @map.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+}
+
+enum Role {
+  ADMIN
+  MANAGER
+  AGENT
+}
+
+// Dipetakan di kode: WIB = Asia/Jakarta, WITA = Asia/Makassar, WIT = Asia/Jayapura
+enum IndoTimezone {
+  WIB
+  WITA
+  WIT
+}
+
+enum AuditAction {
+  CREATE
+  UPDATE
+  DEACTIVATE
+  ASSIGN
+  UNASSIGN
+  CHECK_IN
+  CHECK_OUT
+  LOGIN
+  LOGIN_FAILED
+  PASSWORD_CHANGE
+  IMPORT
+  EXPORT
+}
+
+enum ContractType {
+  NEW
+  RENEWAL
+}
+
+enum VisitStatus {
+  ONGOING
+  DONE
+}
+
+model User {
+  id                  Int                @id @default(autoincrement()) @map("user_id")
+  name                String             @db.VarChar(120)
+  email               String             @unique @db.VarChar(191)
+  passwordHash        String             @map("password_hash") @db.VarChar(255)
+  mustChangePassword  Boolean            @default(true) @map("must_change_password")
+  role                Role               @default(AGENT)
+  timezone            IndoTimezone       @default(WIB)
+  isActive            Boolean            @default(true) @map("is_active")
+  createdById         Int?               @map("created_by_id")
+  createdBy           User?              @relation("UserCreatedBy", fields: [createdById], references: [id])
+  createdUsers        User[]             @relation("UserCreatedBy")
+  visits              Visit[]
+  assignments         SchoolAssignment[] @relation("AssignmentAgent")
+  assignmentsMade     SchoolAssignment[] @relation("AssignmentBy")
+  auditLogs           AuditLog[]
+  contractsCreated    SchoolContract[]   @relation("ContractCreatedBy")
+  retentionTargetsSet RetentionTarget[]
+  createdAt           DateTime           @default(now()) @map("created_at")
+  updatedAt           DateTime           @updatedAt @map("updated_at")
+
+  @@map("users")
+}
+
+// Master jenjang, diisi admin (SD, SMP, SMA, SMK, MI, MTs, ...)
+model Jenjang {
+  id        Int      @id @default(autoincrement()) @map("jenjang_id")
+  name      String   @unique @db.VarChar(30)
+  isActive  Boolean  @default(true) @map("is_active")
+  schools   School[]
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("jenjang")
+}
+
+// Master paket Skolla, diisi admin
+model Package {
+  id        Int      @id @default(autoincrement()) @map("package_id")
+  name      String   @unique @db.VarChar(100)
+  isActive  Boolean  @default(true) @map("is_active")
+  schools   School[]
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("packages")
+}
+
+model School {
+  id                   Int                @id @default(autoincrement()) @map("school_id")
+  // ID sekolah di LMS Skolla (angka). Boleh kosong. Bukan foreign key sungguhan
+  // karena tabel LMS ada di database lain. Sesuaikan jika kolom di LMS
+  // ternyata INT UNSIGNED atau BIGINT
+  lmsSchoolId          Int?               @unique @map("lms_school_id")
+  npsn                 String             @unique @db.VarChar(10)
+  name                 String             @db.VarChar(200)
+  jenjangId            Int                @map("jenjang_id")
+  jenjang              Jenjang            @relation(fields: [jenjangId], references: [id])
+  packageId            Int                @map("package_id")
+  package              Package            @relation(fields: [packageId], references: [id])
+  timezone             IndoTimezone       @default(WIB)
+  partnershipStartDate DateTime           @map("partnership_start_date") @db.Date
+  onboardingDate       DateTime?          @map("onboarding_date") @db.Date
+  activeSinceDate      DateTime?          @map("active_since_date") @db.Date
+  partnershipEndDate   DateTime?          @map("partnership_end_date") @db.Date
+  address              String?            @db.VarChar(255)
+  city                 String?            @db.VarChar(100)
+  picName              String?            @map("pic_name") @db.VarChar(120)
+  picContact           String?            @map("pic_contact") @db.VarChar(60)
+  latitude             Decimal?           @db.Decimal(9, 6)
+  longitude            Decimal?           @db.Decimal(9, 6)
+  visits               Visit[]
+  assignments          SchoolAssignment[]
+  contracts            SchoolContract[]
+  createdAt            DateTime           @default(now()) @map("created_at")
+  updatedAt            DateTime           @updatedAt @map("updated_at")
+
+  @@index([jenjangId])
+  @@index([packageId])
+  @@map("schools")
+}
+
+// Satu baris per kontrak (kontrak awal atau perpanjangan). Tanggal mulai dan
+// tanggal berakhir diisi manual sesuai dokumen kontrak; durasi bisa berbeda.
+// Nilai kontrak berlaku penuh untuk seluruh durasi, tidak diprorata.
+// Perpanjangan menunjuk kontrak yang diperpanjangnya lewat previous_contract_id.
+// Retention kontrak = contract_value perpanjangannya / contract_value kontrak ini,
+// dihitung sejak perpanjangan ditandatangani (signed_date).
+// Kontrak berjalan = contract_start_date <= hari ini <= contract_end_date.
+// Periode kontrak dalam satu sekolah tidak boleh tumpang tindih (dicek di service)
+model SchoolContract {
+  id                 Int             @id @default(autoincrement()) @map("contract_id")
+  schoolId           Int             @map("school_id")
+  school             School          @relation(fields: [schoolId], references: [id])
+  contractType       ContractType    @map("contract_type")
+  previousContractId Int?            @unique @map("previous_contract_id")
+  previousContract   SchoolContract? @relation("ContractRenewal", fields: [previousContractId], references: [id])
+  renewal            SchoolContract? @relation("ContractRenewal")
+  // Tanggal klien menandatangani kontrak. Wajib untuk RENEWAL
+  signedDate         DateTime?       @map("signed_date") @db.Date
+  contractStartDate  DateTime        @map("contract_start_date") @db.Date
+  contractEndDate    DateTime        @map("contract_end_date") @db.Date
+  // Nilai kontrak (rupiah) untuk seluruh durasi kontrak
+  contractValue      Decimal         @map("contract_value") @db.Decimal(15, 2)
+  note               String?         @db.VarChar(255)
+  createdById        Int             @map("created_by_id")
+  createdBy          User            @relation("ContractCreatedBy", fields: [createdById], references: [id])
+  createdAt          DateTime        @default(now()) @map("created_at")
+  updatedAt          DateTime        @updatedAt @map("updated_at")
+
+  @@unique([schoolId, contractStartDate])
+  @@index([schoolId, contractStartDate])
+  @@index([contractEndDate])
+  @@index([signedDate])
+  @@map("school_contracts")
+}
+
+// Persentase target retention per tahun (default 65). Basis tahun T = total
+// contract_value kontrak yang contract_end_date-nya jatuh di tahun T
+model RetentionTarget {
+  id            Int      @id @default(autoincrement()) @map("retention_target_id")
+  year          Int      @unique
+  targetPercent Decimal  @default(65) @map("target_percent") @db.Decimal(5, 2)
+  setById       Int      @map("set_by_id")
+  setBy         User     @relation(fields: [setById], references: [id])
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  @@map("retention_targets")
+}
+
+// Penugasan sekolah ke agent (opsional), banyak-ke-banyak. Riwayat disimpan:
+// penugasan aktif adalah baris dengan unassigned_at kosong. Batas jumlah agent
+// aktif per sekolah diatur konstanta MAX_AGENTS_PER_SCHOOL (MVP: 1) dan
+// ditegakkan di service dalam transaksi, bukan di schema
+model SchoolAssignment {
+  id           Int       @id @default(autoincrement()) @map("assignment_id")
+  schoolId     Int       @map("school_id")
+  school       School    @relation(fields: [schoolId], references: [id])
+  agentId      Int       @map("agent_id")
+  agent        User      @relation("AssignmentAgent", fields: [agentId], references: [id])
+  assignedById Int       @map("assigned_by_id")
+  assignedBy   User      @relation("AssignmentBy", fields: [assignedById], references: [id])
+  // Porsi nilai kontrak sekolah yang dihitung ke agent ini. 100 selama satu agent
+  sharePercent Decimal   @default(100) @map("share_percent") @db.Decimal(5, 2)
+  assignedAt   DateTime  @default(now()) @map("assigned_at")
+  unassignedAt DateTime? @map("unassigned_at")
+
+  @@index([agentId, unassignedAt])
+  @@index([schoolId, unassignedAt])
+  @@map("school_assignments")
+}
+
+model Visit {
+  id              Int          @id @default(autoincrement()) @map("visit_id")
+  agentId         Int          @map("agent_id")
+  agent           User         @relation(fields: [agentId], references: [id])
+  schoolId        Int          @map("school_id")
+  school          School       @relation(fields: [schoolId], references: [id])
+  // Salinan zona waktu agent saat check-in, untuk menampilkan jam kunjungan
+  timezone        IndoTimezone
+  checkInAt       DateTime     @map("check_in_at")
+  checkInLat      Decimal      @map("check_in_lat") @db.Decimal(9, 6)
+  checkInLng      Decimal      @map("check_in_lng") @db.Decimal(9, 6)
+  checkInAccuracy Float?       @map("check_in_accuracy")
+  // Path relatif di bawah PHOTO_STORAGE_DIR, bukan URL publik
+  photoPath       String       @map("photo_path") @db.VarChar(255)
+  checkOutAt      DateTime?    @map("check_out_at")
+  report          String?      @db.Text
+  status          VisitStatus  @default(ONGOING)
+  createdAt       DateTime     @default(now()) @map("created_at")
+  updatedAt       DateTime     @updatedAt @map("updated_at")
+
+  @@index([agentId, checkInAt])
+  @@index([schoolId, checkInAt])
+  @@index([checkInAt])
+  @@map("visits")
+}
+
+// Log riwayat perubahan data transaksi. Hanya ditambah, tidak pernah diubah
+// atau dihapus oleh aplikasi. changes berisi {before, after} untuk UPDATE
+model AuditLog {
+  id         Int         @id @default(autoincrement()) @map("log_id")
+  actorId    Int?        @map("actor_id")
+  actor      User?       @relation(fields: [actorId], references: [id])
+  action     AuditAction
+  entityType String      @map("entity_type") @db.VarChar(50)
+  entityId   Int?        @map("entity_id")
+  changes    Json?
+  ipAddress  String?     @map("ip_address") @db.VarChar(45)
+  userAgent  String?     @map("user_agent") @db.VarChar(255)
+  createdAt  DateTime    @default(now()) @map("created_at")
+
+  @@index([entityType, entityId, createdAt])
+  @@index([actorId, createdAt])
+  @@index([createdAt])
+  @@map("audit_logs")
+}
+```
