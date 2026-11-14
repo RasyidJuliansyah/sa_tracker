@@ -70,3 +70,21 @@ export function retentionForAgent(
   }
   return compute(rows, contracts, todayWib, targetPercent)
 }
+
+export interface CohortBreakdown {
+  renewed: { count: number; amount: number }
+  lapsed: { count: number; amount: number }
+  pending: { count: number; amount: number }
+}
+
+/** Rincian kohort tahun T: sudah diperpanjang (nilai perpanjangan), berakhir belum diperpanjang, belum jatuh tempo. */
+export function cohortBreakdown(contracts: ContractRow[], year: number, todayWib: string): CohortBreakdown {
+  const out: CohortBreakdown = { renewed: { count: 0, amount: 0 }, lapsed: { count: 0, amount: 0 }, pending: { count: 0, amount: 0 } }
+  for (const c of contracts.filter((x) => yearOf(x.endDate) === year)) {
+    const r = retainedFor(c, contracts)
+    const bucket = r > 0 ? out.renewed : c.endDate < todayWib ? out.lapsed : out.pending
+    bucket.count += 1
+    bucket.amount += r > 0 ? r : c.value
+  }
+  return out
+}

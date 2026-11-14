@@ -60,3 +60,11 @@ Kunjungan: `{ id, agentId, agentName, schoolId, schoolName, assigned, timezone, 
 | GET | `/visits/:id` | semua (AGENT: milik sendiri; lainnya 404) | `{ visit }` |
 | GET | `/visits/:id/photo` | sama | Gambar; `Cache-Control: no-store`, `nosniff`. Satu-satunya jalan ke foto (folder `PHOTO_STORAGE_DIR` di luar publik). |
 Audit CHECK_IN/CHECK_OUT hanya memuat `schoolId`, tanpa koordinat.
+
+## Dashboard (B8)
+Query: `period=day|week|month` (default week), `offset` (0 = periode ini, −1 = sebelumnya). Batas periode dihitung dalam WIB (minggu Senin–Minggu); retention tahunan tidak ikut periode.
+| Metode | Path | Peran | Isi |
+|---|---|---|---|
+| GET | `/dashboard/manager` | ADMIN, MANAGER | `{ today, period, previous, annual:{year,targetPercent,cohortValue,retainedValue,percent,targetValue,decidedValue,decidedRetained,status,breakdown:{renewed,lapsed,pending}}, agents:[{id,name,timezone,schools,retentionPct,status,retainedValue,cohortValue,contributionPct,visits,unvisited}], stats:{current,previous}, chart:{labels,now,before}, attention[], unvisited[] }` |
+| GET | `/dashboard/agent` | AGENT | `{ today, period, previous, retention, stats:{current,previous}, unvisited[], attention[] }` hanya data agent itu (sekolah yang sedang ditugaskan) |
+`stats.*`: `{ visits, ongoing, schools, completed, durationMinutes, renewalValue, assignedVisits, otherVisits }`. `attention`: kontrak lewat tempo (`lapsed`) atau ≤ 60 hari (`soon`) yang belum diperpanjang. `unvisited`: sekolah bertugas yang tidak dikunjungi siapa pun pada periode terpilih (+ `lastVisitAt`). Perpanjangan per periode dihitung dari tanggal tanda tangan.
