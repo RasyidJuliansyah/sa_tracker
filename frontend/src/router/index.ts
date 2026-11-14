@@ -28,7 +28,6 @@ export const router = createRouter({
 function allowedRoles(path: string): Role[] {
   if (path.startsWith('/agent')) return ['AGENT']
   if (path === '/akun' || path === '/master-data') return ['ADMIN']
-  if (path.startsWith('/rekap')) return ['MANAGER'] // data kunjungan (GPS, foto) tidak untuk admin
   return ['ADMIN', 'MANAGER']
 }
 

@@ -24,7 +24,7 @@ export const sidebarItems: Record<'ADMIN' | 'MANAGER', NavItem[]> = {
     audit,
   ],
   ADMIN: [
-    dashboard, sekolah, penugasan, target, imporEkspor,
+    dashboard, rekap, sekolah, penugasan, target, imporEkspor,
     { label: 'Akun', to: '/akun', icon: 'mdi-account-multiple-outline' },
     { label: 'Master data', to: '/master-data', icon: 'mdi-shape-outline' },
     audit,

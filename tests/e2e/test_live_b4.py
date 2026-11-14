@@ -185,13 +185,3 @@ def test_impor_csv_pratinjau_lalu_simpan_dan_ekspor(page: Page, tmp_path) -> Non
         page.get_by_role("button", name="Unduh CSV").first.click()
     assert npsn in open(dl.value.path(), encoding="utf-8-sig").read()
     expect(page.get_by_test_id("export-log").first).to_contain_text("Data sekolah")
-
-
-def test_admin_tidak_melihat_data_kunjungan(page: Page) -> None:
-    login(page, "admin@skolla.test")
-    expect(page.get_by_role("link", name="Rekap kunjungan")).to_have_count(0)
-    page.goto("/rekap")
-    expect(page).to_have_url(re.compile(r"/akun$"))  # dialihkan ke beranda admin
-    page.goto("/dashboard")
-    expect(page.locator(".stat-card__label", has_text="Perpanjangan ditandatangani")).to_be_visible()
-    expect(page.get_by_test_id("api-error")).to_have_count(0)
