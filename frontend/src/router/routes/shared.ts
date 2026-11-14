@@ -9,6 +9,4 @@ export const managerRoutes: RouteRecordRaw[] = [
   { path: '/rekap', name: 'rekap', component: Placeholder, meta: { title: 'Rekap kunjungan' } },
   { path: '/rekap/:id', name: 'rekap-detail', component: Placeholder, meta: { title: 'Detail kunjungan' } },
   { path: '/akun-agent', name: 'akun-agent', component: Placeholder, meta: { title: 'Akun agent' } },
-  { path: '/penugasan', name: 'penugasan', component: Placeholder, meta: { title: 'Penugasan' } },
-  { path: '/target-retention', name: 'target-retention', component: Placeholder, meta: { title: 'Target retention' } },
 ]
