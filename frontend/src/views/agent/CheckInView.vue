@@ -23,6 +23,7 @@ const photoUrl = ref<string | null>(null)
 const photoTime = ref<string | null>(null)
 const location = ref<LocationFix | null>(null)
 const locationState = ref<LocationState>('idle')
+let saved = false
 const attempted = ref(false)
 const submitError = ref<string | null>(null)
 
@@ -59,7 +60,8 @@ function submit() {
   attempted.value = true
   if (locationFailed.value) return void requestLocation()
   try {
-    store.checkIn({ schoolId: schoolId.value, hasPhoto: Boolean(photoUrl.value), location: location.value })
+    store.checkIn({ schoolId: schoolId.value, hasPhoto: Boolean(photoUrl.value), location: location.value, photoUrl: photoUrl.value })
+    saved = true
     router.push('/agent')
   } catch (e) {
     if (!(e instanceof VisitError)) throw e
@@ -67,7 +69,8 @@ function submit() {
   }
 }
 watch(schoolId, () => (submitError.value = null))
-onBeforeUnmount(() => photoUrl.value && URL.revokeObjectURL(photoUrl.value))
+// Foto yang sudah dipakai kunjungan tetap hidup selama sesi (untuk miniatur di Check-out).
+onBeforeUnmount(() => photoUrl.value && !saved && URL.revokeObjectURL(photoUrl.value))
 onMounted(() => window.scrollTo(0, 0))
 </script>
 

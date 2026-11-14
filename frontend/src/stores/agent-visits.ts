@@ -17,12 +17,13 @@ export const useAgentVisitsStore = defineStore('agent-visits', () => {
   setInterval(() => (tick.value += 1), 30_000)
   const now = computed(() => new Date(new Date(MOCK_NOW_ISO).getTime() + (tick.value, Date.now() - startedAt)))
 
+  const lastCompleted = ref<Visit | null>(null)
   const ongoing = computed(() => findOngoing(visits.value))
   const sorted = computed(() => [...visits.value].sort((a, b) => b.checkInAt.localeCompare(a.checkInAt)))
   const timezone = agentProfile.timezone
 
   /** Check-in: foto dan lokasi wajib, dan tidak boleh ada kunjungan lain yang berlangsung. */
-  function checkIn(input: { schoolId: number | null; hasPhoto: boolean; location: LocationFix | null }): Visit {
+  function checkIn(input: { schoolId: number | null; hasPhoto: boolean; location: LocationFix | null; photoUrl?: string | null }): Visit {
     const rejection = checkInRejection({ schoolId: input.schoolId, hasPhoto: input.hasPhoto, location: input.location ? 'ok' : 'idle' })
     if (rejection) throw new VisitError(rejection)
     if (ongoing.value) throw new VisitError('Check-in ditolak: masih ada kunjungan yang berlangsung. Check-out dulu.')
@@ -37,6 +38,8 @@ export const useAgentVisitsStore = defineStore('agent-visits', () => {
       timezone,
       status: 'ONGOING',
       report: null,
+      accuracyM: input.location ? Math.round(input.location.accuracy) : null,
+      photoUrl: input.photoUrl ?? null,
     }
     visits.value.push(visit)
     return visit
@@ -51,8 +54,9 @@ export const useAgentVisitsStore = defineStore('agent-visits', () => {
     visit.checkOutAt = now.value.toISOString()
     visit.status = 'COMPLETED'
     visit.report = report.trim()
+    lastCompleted.value = visit
     return visit
   }
 
-  return { visits, now, ongoing, sorted, timezone, checkIn, checkOut }
+  return { visits, now, ongoing, sorted, timezone, lastCompleted, checkIn, checkOut }
 })

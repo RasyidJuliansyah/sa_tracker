@@ -12,6 +12,8 @@ export interface Visit {
   timezone: IndoTimezone
   status: VisitStatus
   report: string | null
+  accuracyM?: number | null
+  photoUrl?: string | null
 }
 
 export interface AgentProfile {
@@ -42,7 +44,7 @@ export const agentProfile: AgentProfile = { name: 'Dimas Saputra', timezone: 'WI
 export const MOCK_NOW_ISO = '2026-11-14T03:40:00.000Z'
 
 export const mockVisits: Visit[] = [
-  { id: 3, schoolId: 1, schoolName: 'SMA Bina Insani Bekasi', checkInAt: '2026-11-14T02:15:00.000Z', checkOutAt: null, timezone: 'WIB', status: 'ONGOING', report: null },
+  { id: 3, schoolId: 1, schoolName: 'SMA Bina Insani Bekasi', checkInAt: '2026-11-14T02:15:00.000Z', checkOutAt: null, timezone: 'WIB', status: 'ONGOING', report: null, accuracyM: 12 },
   { id: 2, schoolId: 2, schoolName: 'SMP Nusa Indah Bekasi', checkInAt: '2026-11-13T06:05:00.000Z', checkOutAt: '2026-11-13T07:10:00.000Z', timezone: 'WIB', status: 'COMPLETED', report: 'Demo fitur laporan nilai untuk guru kelas 8.' },
   { id: 1, schoolId: 3, schoolName: 'SMP Gemilang Bogor', checkInAt: '2026-11-12T02:30:00.000Z', checkOutAt: '2026-11-12T04:00:00.000Z', timezone: 'WIB', status: 'COMPLETED', report: 'Pendampingan penggunaan LMS oleh wali kelas.' },
 ]
