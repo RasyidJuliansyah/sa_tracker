@@ -48,8 +48,12 @@ export async function previewImport(csv: string): Promise<{ rows: ImportRow[]; f
       line: i + 2, npsn: col(r, 'npsn'), name: col(r, 'nama_sekolah'), level: col(r, 'jenjang'), pkg: col(r, 'paket'),
       timezone: col(r, 'zona_waktu') || 'WIB', city: col(r, 'kota'), address: col(r, 'alamat'), pic: col(r, 'pic'), picContact: col(r, 'kontak_pic'),
       lmsId: col(r, 'id_lms'), signed: col(r, 'tanggal_ttd'), start: col(r, 'tanggal_mulai'), end: col(r, 'tanggal_berakhir'),
-      value: Number(col(r, 'nilai_kontrak').replace(/\D/g, '')) || 0, isNew: false, ok: false, message: '',
+      value: 0, isNew: false, ok: false, message: '',
     }
+    const rawValue = col(r, 'nilai_kontrak')
+    // Hanya angka, boleh dengan titik/spasi pemisah ribuan. Koma/desimal ditolak agar nilai tidak salah baca diam-diam.
+    const valueOk = rawValue === '' || /^\d{1,3}([. ]\d{3})+$|^\d+$/.test(rawValue)
+    if (valueOk) row.value = Number(rawValue.replace(/[. ]/g, '')) || 0
     const existing = byNpsn.get(row.npsn)
     row.isNew = !!row.npsn && !existing
     row.schoolId = existing?.id
@@ -59,6 +63,10 @@ export async function previewImport(csv: string): Promise<{ rows: ImportRow[]; f
     if (seen.has(row.npsn)) return fail(`NPSN ${row.npsn} ganda di file ini`)
     seen.add(row.npsn)
     if (!row.name) return fail('Nama sekolah wajib diisi')
+    const tooLong = ([['Nama sekolah', row.name, 200], ['Kota', row.city, 100], ['Alamat', row.address, 255], ['PIC', row.pic, 120], ['Kontak PIC', row.picContact, 60]] as const).find(([, v, n]) => v.length > n)
+    if (tooLong) return fail(`${tooLong[0]} maksimal ${tooLong[2]} karakter`)
+    if (!valueOk) return fail('Nilai kontrak harus berupa angka (boleh titik pemisah ribuan), tanpa koma atau desimal')
+    if (row.value > 9_999_999_999_999) return fail('Nilai kontrak terlalu besar')
     const jj = find(jenjang, row.level)
     if (!jj) return fail(`Jenjang "${row.level}" tidak ada di master jenjang`)
     const pk = find(packages, row.pkg)

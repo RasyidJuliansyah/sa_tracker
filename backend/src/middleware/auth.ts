@@ -2,7 +2,7 @@ import type { RequestHandler } from 'express'
 import { config } from '../config.js'
 import { prisma } from '../db.js'
 import { AppError } from '../utils/errors.js'
-import { readCookie, verifySession, type Role } from '../utils/session-token.js'
+import { passwordVersion, readCookie, verifySession, type Role } from '../utils/session-token.js'
 
 export interface AuthUser { id: number; name: string; email: string; role: Role; timezone: 'WIB' | 'WITA' | 'WIT'; mustChangePassword: boolean }
 
@@ -27,7 +27,7 @@ export const authenticate: RequestHandler = async (req, _res, next) => {
     const session = token ? verifySession(token) : null
     if (!session) throw new AppError('UNAUTHENTICATED', 'Silakan masuk terlebih dahulu.')
     const u = await prisma.user.findUnique({ where: { id: session.sub } })
-    if (!u || !u.isActive) throw new AppError('UNAUTHENTICATED', 'Akun tidak aktif atau tidak ditemukan.')
+    if (!u || !u.isActive || passwordVersion(u.passwordHash) !== session.pv) throw new AppError('UNAUTHENTICATED', 'Akun tidak aktif atau tidak ditemukan.')
     req.user = { id: u.id, name: u.name, email: u.email, role: u.role, timezone: u.timezone, mustChangePassword: u.mustChangePassword }
     next()
   } catch (e) {

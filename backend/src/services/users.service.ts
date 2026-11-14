@@ -5,6 +5,8 @@ import { AppError } from '../utils/errors.js'
 import { generateTempPassword } from '../utils/password.js'
 import { withAudit, type AuditEntry } from './audit.js'
 
+/** Biaya bcrypt untuk password baru (tes bisa menurunkan lewat BCRYPT_COST). */
+const BCRYPT_COST = Number(process.env.BCRYPT_COST ?? 12)
 type Ctx = { ip?: string; userAgent?: string }
 type Role = 'ADMIN' | 'MANAGER' | 'AGENT'
 type Tz = 'WIB' | 'WITA' | 'WIT'
@@ -37,7 +39,7 @@ export async function createUser(actor: AuthUser, input: { name: string; email: 
   const email = input.email.trim().toLowerCase()
   if (await prisma.user.findUnique({ where: { email } })) throw new AppError('CONFLICT', 'Email sudah terdaftar.')
   const tempPassword = input.password ?? generateTempPassword()
-  const passwordHash = await bcrypt.hash(tempPassword, 10)
+  const passwordHash = await bcrypt.hash(tempPassword, BCRYPT_COST)
   const user = await withAudit(async (tx) => {
     const u = await tx.user.create({ data: { name: input.name.trim(), email, role: input.role, timezone: input.timezone, passwordHash, mustChangePassword: true, createdById: actor.id }, select })
     return { result: u, audit: { actorId: actor.id, action: 'CREATE', entityType: 'user', entityId: u.id, changes: { after: snap(u) }, ...ctx } }
@@ -71,7 +73,7 @@ export async function resetPassword(actor: AuthUser, id: number, ctx: Ctx, passw
   const target = await prisma.user.findUnique({ where: { id }, select })
   if (!target) throw new AppError('NOT_FOUND', 'Akun tidak ditemukan.')
   const tempPassword = password ?? generateTempPassword()
-  const passwordHash = await bcrypt.hash(tempPassword, 10)
+  const passwordHash = await bcrypt.hash(tempPassword, BCRYPT_COST)
   await withAudit(async (tx) => {
     await tx.user.update({ where: { id }, data: { passwordHash, mustChangePassword: true } })
     return { result: null, audit: { actorId: actor.id, action: 'PASSWORD_CHANGE', entityType: 'user', entityId: id, ...ctx } }

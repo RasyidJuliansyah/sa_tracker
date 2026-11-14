@@ -83,6 +83,7 @@ describe.skipIf(!ok)('akun, master data, audit (database uji)', () => {
     expect(old.status).toBe(401)
     const fresh = await fetch(url + '/api/auth/login', { method: 'POST', headers: { 'content-type': 'application/json', origin: 'http://localhost:3010' }, body: JSON.stringify({ email: em('manager'), password: tempPassword }) })
     expect(fresh.status).toBe(200)
+    cookies.manager = fresh.headers.get('set-cookie')!.split(';')[0]! // sesi lama dicabut oleh reset; pakai sesi baru
     expect((await call('manager', `/api/users/${ids.manager}/reset-password`, 'POST')).status).toBe(403)
   })
   it('login mengisi last_login_at', async () => {

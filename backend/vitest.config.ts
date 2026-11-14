@@ -6,5 +6,6 @@ export default defineConfig({
     environment: 'node',
     // Tes database berbagi satu database uji: jalankan berkas satu per satu agar hasilnya tidak acak.
     fileParallelism: false,
+    env: { BCRYPT_COST: '4' },
   },
 })

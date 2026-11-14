@@ -1,11 +1,15 @@
+import { createHash } from 'node:crypto'
 import jwt from 'jsonwebtoken'
 import { config } from '../config.js'
 
 export type Role = 'ADMIN' | 'MANAGER' | 'AGENT'
-export interface SessionPayload { sub: number; role: Role }
+export interface SessionPayload { sub: number; role: Role; pv: string }
 
-export function signSession(userId: number, role: Role): string {
-  return jwt.sign({ role }, config.jwtSecret, { subject: String(userId), expiresIn: `${config.sessionHours}h`, algorithm: 'HS256' })
+/** Sidik password saat ini: berubah setiap password diganti/direset, sehingga sesi lama otomatis tidak berlaku. */
+export const passwordVersion = (passwordHash: string): string => createHash('sha256').update(passwordHash).digest('hex').slice(0, 16)
+
+export function signSession(userId: number, role: Role, passwordHash: string): string {
+  return jwt.sign({ role, pv: passwordVersion(passwordHash) }, config.jwtSecret, { subject: String(userId), expiresIn: `${config.sessionHours}h`, algorithm: 'HS256' })
 }
 
 export function verifySession(token: string): SessionPayload | null {
@@ -13,7 +17,8 @@ export function verifySession(token: string): SessionPayload | null {
     const p = jwt.verify(token, config.jwtSecret, { algorithms: ['HS256'] }) as jwt.JwtPayload
     const sub = Number(p.sub)
     if (!Number.isInteger(sub) || !['ADMIN', 'MANAGER', 'AGENT'].includes(p.role)) return null
-    return { sub, role: p.role as Role }
+    if (typeof p.pv !== 'string') return null
+    return { sub, role: p.role as Role, pv: p.pv }
   } catch {
     return null
   }

@@ -24,6 +24,8 @@ export async function checkIn(actor: AuthUser, input: { schoolId: number; lat: n
   if (!photo) throw new AppError('VALIDATION', 'Foto kunjungan wajib diunggah.')
   const school = await prisma.school.findUnique({ where: { id: input.schoolId }, select: { id: true } })
   if (!school) throw new AppError('NOT_FOUND', 'Sekolah tidak ditemukan.')
+  // Tolak lebih awal (sebelum menulis ke disk); penegakan sesungguhnya tetap di transaksi di bawah.
+  if ((await prisma.visit.count({ where: { agentId: actor.id, status: 'ONGOING' } })) > 0) throw new AppError('CONFLICT', 'Anda masih punya kunjungan yang berlangsung. Check-out dulu.')
   const rel = await savePhoto(photo, now)
   try {
     const id = await withAudit(async (tx) => {

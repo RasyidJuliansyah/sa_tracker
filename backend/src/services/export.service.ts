@@ -8,12 +8,13 @@ import { listSchools } from './school.service.js'
 
 type Ctx = { ip?: string; userAgent?: string }
 export interface CsvResult { content: string; rows: number }
+const MAX_EXPORT_ROWS = 50_000
 const dk = (d: Date) => d.toISOString().slice(0, 10)
 const wibDate = (d: Date) => new Date(d.getTime() + 7 * 3_600_000).toISOString().slice(0, 10)
 const wibTime = (d: Date) => new Date(d.getTime() + 7 * 3_600_000).toISOString().slice(11, 16)
 
 export async function buildSchoolsCsv(actor: AuthUser, f: { jenjangId?: number; status?: string }): Promise<CsvResult> {
-  const { items } = await listSchools(actor, { jenjangId: f.jenjangId, status: f.status, page: 1, pageSize: 200 })
+  const { items } = await listSchools(actor, { jenjangId: f.jenjangId, status: f.status, page: 1, pageSize: 100_000 })
   const body = items.map((s) => [s.npsn, s.name, s.jenjang.name, s.package.name, s.city ?? '', s.agent?.name ?? '', s.contract ? `${s.contract.start} s.d. ${s.contract.end}` : '', s.contract?.value ?? '', s.status?.kind ?? ''])
   return { content: toCsv(['NPSN', 'Nama sekolah', 'Jenjang', 'Paket', 'Kota', 'Agent', 'Kontrak berjalan', 'Nilai kontrak', 'Status perpanjangan'], body), rows: body.length }
 }
@@ -34,7 +35,7 @@ export async function buildContractsCsv(f: { year: number; agentId?: number }): 
 export async function buildVisitsCsv(f: { from?: string; to?: string; agentId?: number }): Promise<CsvResult> {
   const visits = await prisma.visit.findMany({
     where: { ...(f.agentId ? { agentId: f.agentId } : {}), ...((f.from || f.to) && { checkInAt: { ...(f.from && { gte: startOfDayUtc(f.from) }), ...(f.to && { lt: endOfDayExclusiveUtc(f.to) }) } }) },
-    include: { agent: { select: { name: true } }, school: { select: { name: true } } }, orderBy: { checkInAt: 'desc' },
+    include: { agent: { select: { name: true } }, school: { select: { name: true } } }, orderBy: { checkInAt: 'desc' }, take: MAX_EXPORT_ROWS,
   })
   const body = visits.map((v) => [wibDate(v.checkInAt), v.agent.name, v.school.name, wibTime(v.checkInAt), v.checkOutAt ? wibTime(v.checkOutAt) : '', v.checkOutAt ? Math.round((v.checkOutAt.getTime() - v.checkInAt.getTime()) / 60000) : '', v.report ?? ''])
   return { content: toCsv(['Tanggal (WIB)', 'Agent', 'Sekolah', 'Check-in (WIB)', 'Check-out (WIB)', 'Durasi (menit)', 'Laporan'], body), rows: body.length }

@@ -13,7 +13,7 @@ export async function login(email: string, password: string, ctx: { ip?: string;
   if (!user || !user.isActive || !ok) {
     await withAudit(async (tx) => ({
       result: null,
-      audit: { actorId: user?.id ?? null, action: 'LOGIN_FAILED', entityType: 'user', entityId: user?.id ?? null, changes: { email: email.trim().toLowerCase().slice(0, 191) }, ip: ctx.ip, userAgent: ctx.userAgent },
+      audit: { actorId: user?.id ?? null, action: 'LOGIN_FAILED', entityType: 'user', entityId: user?.id ?? null, ip: ctx.ip, userAgent: ctx.userAgent },
     }))
     throw new AppError('UNAUTHENTICATED', 'Email atau password salah.')
   }
@@ -23,5 +23,5 @@ export async function login(email: string, password: string, ctx: { ip?: string;
     result: null,
     audit: { actorId: user.id, action: 'LOGIN', entityType: 'user', entityId: user.id, ip: ctx.ip, userAgent: ctx.userAgent },
   }})
-  return { token: signSession(user.id, user.role), user: { id: user.id, name: user.name, email: user.email, role: user.role, timezone: user.timezone, mustChangePassword: user.mustChangePassword } }
+  return { token: signSession(user.id, user.role, user.passwordHash), user: { id: user.id, name: user.name, email: user.email, role: user.role, timezone: user.timezone, mustChangePassword: user.mustChangePassword } }
 }

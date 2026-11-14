@@ -13,7 +13,7 @@ type Ctx = { ip?: string; userAgent?: string }
 /** Penugasan per agent aktif + sekolah tanpa agent. */
 export async function listAssignments(actor: AuthUser) {
   const agents = await prisma.user.findMany({ where: { role: 'AGENT', isActive: true }, select: { id: true, name: true, timezone: true }, orderBy: { name: 'asc' } })
-  const { items } = await listSchools(actor, { page: 1, pageSize: 200 })
+  const { items } = await listSchools(actor, { page: 1, pageSize: 100_000 })
   const today = dateKeyIn(new Date())
   const year = Number(today.slice(0, 4))
   const [contracts, active, target] = await Promise.all([
