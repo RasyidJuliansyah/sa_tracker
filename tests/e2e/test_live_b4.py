@@ -95,3 +95,49 @@ def test_agent_tidak_melihat_sekolah_lain_lewat_api(page: Page) -> None:
     api = os.environ.get("LIVE_API", "http://localhost:3013/api")
     assert page.request.get(f"{api}/schools/1").status == 200
     assert page.request.get(f"{api}/schools/2").status == 404
+
+
+# ---- B7: check-in/check-out dengan foto, lalu manager melihat di Rekap ----
+PNG_1PX = bytes.fromhex(
+    "89504e470d0a1a0a0000000d4948445200000001000000010806000000" "1f15c4890000000d49444154789c6360f8cfc0f01f0005000201a5f645400000000049454e44ae426082"
+)
+
+
+def test_agent_check_in_check_out_dan_manager_melihat_rekap(browser, base_url: str) -> None:
+    ctx = browser.new_context(
+        viewport={"width": 390, "height": 844}, locale="id-ID", base_url=base_url,
+        permissions=["geolocation"], geolocation={"latitude": -6.23841, "longitude": 106.99312, "accuracy": 12},
+    )
+    page = ctx.new_page()
+    login(page, "citra@skolla.test")
+    expect(page).to_have_url(re.compile(r"/agent$"))
+    # Bersihkan kunjungan berlangsung sisa (bila ada) agar tes bisa diulang.
+    if page.get_by_role("button", name="Check-out dan tulis laporan").count():
+        page.get_by_role("button", name="Check-out dan tulis laporan").click()
+        page.get_by_label("Laporan kunjungan").fill("Sisa kunjungan uji.")
+        page.get_by_role("button", name="Check-out", exact=True).click()
+        expect(page.get_by_role("heading", name="Kunjungan selesai", level=2)).to_be_visible()
+        page.get_by_role("link", name="Kembali ke beranda").click()
+    page.get_by_label("Navigasi utama").get_by_role("link", name="Check-in").click()
+    page.get_by_role("button", name="Lanjut ke foto").click()
+    page.set_input_files("[data-testid=foto-input]", {"name": "k.png", "mimeType": "image/png", "buffer": PNG_1PX})
+    page.get_by_role("button", name="Check-in sekarang").click()
+    expect(page).to_have_url(re.compile(r"/agent$"))
+    expect(page.get_by_label("Kunjungan berlangsung")).to_be_visible()
+    laporan = f"Laporan uji live {int(time.time())}"
+    page.get_by_role("button", name="Check-out dan tulis laporan").click()
+    page.get_by_label("Laporan kunjungan").fill(laporan)
+    page.get_by_role("button", name="Check-out", exact=True).click()
+    expect(page.get_by_role("heading", name="Kunjungan selesai", level=2)).to_be_visible()
+    ctx.close()
+
+    mgr = browser.new_context(viewport={"width": 1280, "height": 800}, locale="id-ID", base_url=base_url)
+    mp = mgr.new_page()
+    login(mp, "manager@skolla.test")
+    mp.goto("/rekap")
+    expect(mp.get_by_text("Citra Agent").first).to_be_visible()
+    mp.get_by_text("Citra Agent").first.click()
+    expect(mp).to_have_url(re.compile(r"/rekap/\d+$"))
+    expect(mp.get_by_text(laporan)).to_be_visible()
+    expect(mp.get_by_alt_text("Foto bukti kunjungan")).to_be_visible()
+    mgr.close()

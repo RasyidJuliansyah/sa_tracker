@@ -4,11 +4,13 @@ import { useRouter } from 'vue-router'
 import BottomAction from '@/components/agent/BottomAction.vue'
 import CheckInCaptureStep from '@/components/agent/CheckInCaptureStep.vue'
 import CheckInSchoolStep from '@/components/agent/CheckInSchoolStep.vue'
+import { compressImage } from '@/components/agent/compress-image'
 import { getLocation } from '@/components/agent/geolocation'
 import type { LocationFailure, LocationFix } from '@/components/agent/geolocation'
 import { checkInRejection } from '@/components/agent/visit-rules'
 import type { LocationState } from '@/components/agent/visit-rules'
 import { agentService } from '@/services/agent'
+import { MOCK_AUTH } from '@/stores/session'
 import { VisitError, useAgentVisitsStore } from '@/stores/agent-visits'
 import { formatClock } from '@/utils/timezone'
 
@@ -20,6 +22,7 @@ const step = ref<1 | 2>(1)
 const schoolId = ref<number | null>(schools.find((s) => s.assigned)?.id ?? null)
 const school = computed(() => schools.find((s) => s.id === schoolId.value) ?? null)
 const photoUrl = ref<string | null>(null)
+const photoFile = ref<File | null>(null)
 const photoTime = ref<string | null>(null)
 const location = ref<LocationFix | null>(null)
 const locationState = ref<LocationState>('idle')
@@ -51,15 +54,23 @@ function toCapture() {
   if (locationState.value !== 'ok') void requestLocation()
 }
 function onPhoto(file: File) {
+  photoFile.value = file
+  if (!MOCK_AUTH) void compressImage(file).then((c) => { if (photoFile.value === file) photoFile.value = c })
   if (photoUrl.value) URL.revokeObjectURL(photoUrl.value)
   photoUrl.value = URL.createObjectURL(file)
   photoTime.value = formatClock(store.now, store.timezone).replace(` ${store.timezone}`, '')
   submitError.value = null
 }
-function submit() {
+async function submit() {
   attempted.value = true
   if (locationFailed.value) return void requestLocation()
   try {
+    if (!MOCK_AUTH) {
+      await store.checkInApi({ schoolId: schoolId.value, file: photoFile.value, location: location.value })
+      saved = true
+      router.push('/agent')
+      return
+    }
     store.checkIn({ schoolId: schoolId.value, hasPhoto: Boolean(photoUrl.value), location: location.value, photoUrl: photoUrl.value })
     saved = true
     router.push('/agent')

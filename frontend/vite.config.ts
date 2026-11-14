@@ -20,5 +20,7 @@ export default defineConfig({
   test: {
     include: ['tests/unit/**/*.test.ts'],
     environment: 'node',
+    // Tes unit memakai layanan tiruan (mode dev:mock).
+    env: { VITE_MOCK_AUTH: '1' },
   },
 })

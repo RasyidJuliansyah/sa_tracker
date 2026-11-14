@@ -1,9 +1,11 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import EmptyState from '@/components/EmptyState.vue'
 import StatusChip from '@/components/StatusChip.vue'
+import { fetchImageUrl } from '@/services/http'
 import { getVisit, googleMapsUrl, type VisitRow } from '@/services/manager'
+import { MOCK_AUTH } from '@/stores/session'
 import { formatDateLong, formatDuration } from '@/utils/format'
 import { formatClock } from '@/utils/timezone'
 
@@ -11,11 +13,16 @@ import { formatClock } from '@/utils/timezone'
 const route = useRoute()
 const visit = ref<VisitRow | null>(null)
 const loaded = ref(false)
+const photoUrl = ref<string | null>(null)
+onBeforeUnmount(() => photoUrl.value && URL.revokeObjectURL(photoUrl.value))
 
 watch(() => route.params.id, async (id) => {
   loaded.value = false
+  if (photoUrl.value) URL.revokeObjectURL(photoUrl.value)
+  photoUrl.value = null
   visit.value = await getVisit(Number(id))
   loaded.value = true
+  if (visit.value && !MOCK_AUTH) photoUrl.value = await fetchImageUrl(`/visits/${visit.value.id}/photo`)
 }, { immediate: true })
 
 const initials = (name: string) => name.split(' ').slice(0, 2).map((w) => w[0]).join('').toUpperCase()
@@ -64,7 +71,8 @@ const rows = computed(() => {
             <h3 class="detail__h3">Foto check-in</h3>
             <p class="detail__caption">Diambil {{ formatClock(visit.checkInAt, visit.timezone) }} · dikompres sebelum diunggah</p>
           </header>
-          <div class="detail__photo" role="img" aria-label="Foto bukti kunjungan (placeholder)">
+          <img v-if="photoUrl" :src="photoUrl" alt="Foto bukti kunjungan" class="detail__photo detail__photo--img" />
+          <div v-else class="detail__photo" role="img" aria-label="Foto bukti kunjungan (placeholder)">
             <v-icon icon="mdi-image-outline" size="48" class="detail__photo-icon" />
             <span class="detail__photo-text">Foto bukti kunjungan</span>
           </div>
@@ -133,6 +141,7 @@ const rows = computed(() => {
   display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; height: 380px; border-radius: 8px;
   background: rgb(var(--v-theme-canvas-alt));
 }
+.detail__photo--img { width: 100%; object-fit: contain; background: rgb(var(--v-theme-canvas-table, 245 245 247)); }
 .detail__photo-icon, .detail__photo-text { color: rgb(var(--v-theme-text-secondary)); }
 .detail__photo-text { font-size: 13px; line-height: 18px; font-weight: 500; }
 .detail__row { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid rgb(var(--v-theme-border)); font-size: 14px; line-height: 20px; }

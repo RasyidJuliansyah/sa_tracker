@@ -1,6 +1,8 @@
 // Lapisan layanan manager. Sekarang membaca data tiruan dalam memori; nanti diganti panggilan API
 // tanpa mengubah layar yang membacanya.
 import { initialAgents, initialVisits, mockSchools, type MockAgent, type MockManagerVisit, type MockSchoolRef } from '@/mocks/manager'
+import { pinia } from '@/plugins/pinia'
+import { useReferenceStore } from '@/stores/reference'
 import { MOCK_AUTH } from '@/stores/session'
 import { api } from './http'
 import { lastLoginLabel } from './admin.api'
@@ -62,19 +64,56 @@ export function filterVisits(rows: VisitRow[], f: VisitFilter): VisitRow[] {
   )
 }
 
+interface ApiVisit {
+  id: number; agentId: number; agentName: string; schoolId: number; schoolName: string; assigned: boolean; timezone: IndoTimezone
+  checkInAt: string; checkOutAt: string | null; durationMinutes: number | null; status: 'ONGOING' | 'DONE'; report: string | null
+  accuracyM: number | null; lat: number; lng: number
+}
+const rowFromApi = (v: ApiVisit): VisitRow => ({
+  id: v.id, dateKey: wibDateKey(v.checkInAt), dayLabel: idFmt({ weekday: 'long' }, v.checkInAt),
+  dateLabel: idFmt({ day: 'numeric', month: 'short', year: 'numeric' }, v.checkInAt),
+  agentId: v.agentId, agentName: v.agentName, schoolId: v.schoolId, schoolName: v.schoolName, assigned: v.assigned,
+  timezone: v.timezone, checkInAt: v.checkInAt, checkOutAt: v.checkOutAt,
+  durationMinutes: v.durationMinutes ?? Math.max(0, Math.round((Date.now() - new Date(v.checkInAt).getTime()) / 60000)),
+  status: v.status === 'DONE' ? 'COMPLETED' : 'ONGOING', report: v.report, accuracyM: v.accuracyM ?? 0, lat: v.lat, lng: v.lng,
+})
+
+async function listVisitsApi(f: VisitFilter): Promise<VisitRow[]> {
+  const qs = new URLSearchParams({ pageSize: '100' })
+  if (f.from) qs.set('from', f.from)
+  if (f.to) qs.set('to', f.to)
+  if (f.agentId) qs.set('agentId', String(f.agentId))
+  if (f.schoolId) qs.set('schoolId', String(f.schoolId))
+  if (f.status) qs.set('status', f.status === 'COMPLETED' ? 'DONE' : 'ONGOING')
+  const out: VisitRow[] = []
+  for (let page = 1; page <= 10; page++) {
+    qs.set('page', String(page))
+    const r = await api<{ total: number; items: ApiVisit[] }>(`/visits?${qs}`)
+    out.push(...r.items.map(rowFromApi))
+    if (out.length >= r.total) break
+  }
+  return out
+}
+
 export async function listVisits(filter: VisitFilter): Promise<VisitRow[]> {
+  if (!MOCK_AUTH) return listVisitsApi(filter)
   return filterVisits(visits.map(toRow), filter)
 }
 
 export async function getVisit(id: number): Promise<VisitRow | null> {
+  if (!MOCK_AUTH) {
+    try { return rowFromApi((await api<{ visit: ApiVisit }>(`/visits/${id}`)).visit) } catch (e) { if ((e as { status?: number }).status === 404) return null; throw e }
+  }
   const v = visits.find((x) => x.id === id)
   return v ? toRow(v) : null
 }
 
 export function listAgentOptions(): { id: number; name: string }[] {
+  if (!MOCK_AUTH) return useReferenceStore(pinia).agents.map((a) => ({ id: a.id, name: a.name }))
   return agents.map((a) => ({ id: a.id, name: a.name }))
 }
 export function listSchoolOptions(): { id: number; name: string }[] {
+  if (!MOCK_AUTH) return useReferenceStore(pinia).schoolOptions.map((s) => ({ id: s.id, name: s.name }))
   return [...mockSchools].sort((a, b) => a.name.localeCompare(b.name, 'id')).map((s) => ({ id: s.id, name: s.name }))
 }
 

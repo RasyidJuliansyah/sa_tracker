@@ -1,5 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { pinia } from '@/plugins/pinia'
+import { loadAgentData } from '@/services/agent'
+import { useAgentVisitsStore } from '@/stores/agent-visits'
 import { useReferenceStore } from '@/stores/reference'
 import { homeFor, MOCK_AUTH, useSessionStore, type Role } from '@/stores/session'
 import { adminRoutes } from './routes/admin'
@@ -29,6 +31,7 @@ function allowedRoles(path: string): Role[] {
   return ['ADMIN', 'MANAGER']
 }
 
+let agentLoaded = false
 router.beforeEach(async (to) => {
   const session = useSessionStore(pinia)
   if (MOCK_AUTH) {
@@ -42,6 +45,7 @@ router.beforeEach(async (to) => {
   if (to.name === 'komponen') return true
   if (!session.user) return { name: 'login' }
   if (session.user.role !== 'AGENT') await useReferenceStore(pinia).load()
+  else if (!MOCK_AUTH && !agentLoaded) { await Promise.all([loadAgentData(), useAgentVisitsStore(pinia).load()]); agentLoaded = true }
   if (to.path === '/') return homeFor(session.user.role)
   if (!allowedRoles(to.path).includes(session.user.role)) return homeFor(session.user.role)
   return true

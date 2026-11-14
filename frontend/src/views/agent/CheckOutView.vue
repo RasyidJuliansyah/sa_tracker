@@ -7,6 +7,7 @@ import StatusChip from '@/components/StatusChip.vue'
 import BottomAction from '@/components/agent/BottomAction.vue'
 import { visitMinutes } from '@/components/agent/visit-format'
 import { agentService } from '@/services/agent'
+import { MOCK_AUTH } from '@/stores/session'
 import { VisitError, useAgentVisitsStore } from '@/stores/agent-visits'
 import { formatDuration } from '@/utils/format'
 import { formatClock } from '@/utils/timezone'
@@ -18,9 +19,10 @@ const error = ref<string | undefined>()
 const visit = computed(() => store.ongoing)
 const assigned = computed(() => agentService.schools().find((s) => s.id === visit.value?.schoolId)?.assigned ?? false)
 
-function submit() {
+async function submit() {
   try {
-    store.checkOut(report.value)
+    if (MOCK_AUTH) store.checkOut(report.value)
+    else await store.checkOutApi(report.value)
     router.replace('/agent/check-out/selesai')
   } catch (e) {
     if (!(e instanceof VisitError)) throw e

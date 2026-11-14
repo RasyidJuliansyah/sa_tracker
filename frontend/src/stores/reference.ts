@@ -11,6 +11,7 @@ export const useReferenceStore = defineStore('reference', () => {
   const levels = ref<RefItem[]>([])
   const packages = ref<RefItem[]>([])
   const agents = ref<MockAgent[]>([])
+  const schoolOptions = ref<{ id: number; name: string; npsn: string; city: string; assigned: boolean }[]>([])
   const loaded = ref(false)
 
   async function load(force = false) {
@@ -20,16 +21,18 @@ export const useReferenceStore = defineStore('reference', () => {
       packages.value = PACKAGES.map((name, i) => ({ id: i + 1, name }))
       agents.value = mockAgents
     } else {
-      const [l, p, u] = await Promise.all([
+      const [l, p, u, so] = await Promise.all([
         api<{ items: { id: number; name: string; active: boolean }[] }>('/master/jenjang'),
         api<{ items: { id: number; name: string; active: boolean }[] }>('/master/packages'),
         api<{ items: { id: number; name: string; timezone: MockAgent['timezone']; status: string }[] }>('/users?role=AGENT'),
+        api<{ items: { id: number; name: string; npsn: string; city: string; assigned: boolean }[] }>('/schools/options'),
       ])
+      schoolOptions.value = so.items
       levels.value = l.items.filter((i) => i.active)
       packages.value = p.items.filter((i) => i.active)
       agents.value = u.items.filter((a) => a.status !== 'INACTIVE').map((a) => ({ id: a.id, name: a.name, timezone: a.timezone, retention2026: 0 }))
     }
     loaded.value = true
   }
-  return { levels, packages, agents, loaded, load }
+  return { levels, packages, agents, schoolOptions, loaded, load }
 })

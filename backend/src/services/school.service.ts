@@ -151,3 +151,12 @@ export async function addRenewal(actor: AuthUser, schoolId: number, input: { pre
   })
   return getSchool(actor, schoolId)
 }
+
+/** Opsi sekolah untuk pemilih check-in: semua sekolah (agent boleh check-in di mana saja), tanpa nilai kontrak. */
+export async function schoolOptions(actor: AuthUser) {
+  const rows = await prisma.school.findMany({
+    select: { id: true, name: true, npsn: true, city: true, assignments: { where: { unassignedAt: null }, select: { agentId: true } } },
+    orderBy: { name: 'asc' },
+  })
+  return rows.map((r) => ({ id: r.id, name: r.name, npsn: r.npsn, city: r.city ?? '', assigned: r.assignments.some((a) => a.agentId === actor.id) }))
+}
