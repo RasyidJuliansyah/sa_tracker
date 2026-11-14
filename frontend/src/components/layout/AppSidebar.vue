@@ -1,10 +1,14 @@
 <script setup lang="ts">
 import BrandLogo from '@/components/BrandLogo.vue'
+import { useRoute } from 'vue-router'
 import type { NavItem } from '@/utils/navigation'
 
 // Sidebar desktop (Figma: Sidebar/Manager dan Sidebar/Admin). Lebar 220px.
 defineProps<{ items: NavItem[] }>()
 defineEmits<{ logout: [] }>()
+
+const route = useRoute()
+const active = (item: NavItem, isActive: boolean) => isActive || (item.alsoActiveFor ?? []).some((p) => route.path.startsWith(p))
 </script>
 
 <template>
@@ -15,7 +19,7 @@ defineEmits<{ logout: [] }>()
     </div>
     <nav class="sidebar__nav">
       <router-link v-for="item in items" :key="item.to" v-slot="{ href, navigate, isActive }" :to="item.to" custom>
-        <a :href="href" class="sidebar__item" :class="{ 'sidebar__item--active': isActive }" :aria-current="isActive ? 'page' : undefined" @click="navigate">
+        <a :href="href" class="sidebar__item" :class="{ 'sidebar__item--active': active(item, isActive) }" :aria-current="active(item, isActive) ? 'page' : undefined" @click="navigate">
           <v-icon :icon="item.icon" size="22" />
           <span>{{ item.label }}</span>
         </a>
@@ -39,10 +43,13 @@ defineEmits<{ logout: [] }>()
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 8px;
-  padding: 16px 8px 12px;
+  padding: 8px 0 8px;
+}
+.sidebar__head > :first-child {
+  padding: 8px;
 }
 .sidebar__app {
+  padding: 4px 8px;
   font-size: 16px;
   line-height: 24px;
   font-weight: 600;

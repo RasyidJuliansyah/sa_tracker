@@ -9,8 +9,8 @@ export interface NavItem {
 }
 
 const dashboard: NavItem = { label: 'Dashboard', to: '/dashboard', icon: 'mdi-view-dashboard-outline' }
-const rekap: NavItem = { label: 'Rekap kunjungan', to: '/rekap', icon: 'mdi-clipboard-text-outline' }
-const sekolah: NavItem = { label: 'Sekolah', to: '/sekolah', icon: 'mdi-school-outline' }
+const rekap: NavItem = { label: 'Rekap kunjungan', to: '/rekap', icon: 'mdi-clipboard-text-outline', alsoActiveFor: ['/rekap/'] }
+const sekolah: NavItem = { label: 'Sekolah', to: '/sekolah', icon: 'mdi-school-outline', alsoActiveFor: ['/sekolah/'] }
 const penugasan: NavItem = { label: 'Penugasan', to: '/penugasan', icon: 'mdi-swap-horizontal' }
 const target: NavItem = { label: 'Target retention', to: '/target-retention', icon: 'mdi-target' }
 const imporEkspor: NavItem = { label: 'Impor & ekspor', to: '/impor-ekspor', icon: 'mdi-file-delimited-outline' }
