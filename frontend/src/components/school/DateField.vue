@@ -41,6 +41,9 @@ function openPicker() {
   cursor: pointer;
 }
 .date-field :deep(.v-field) { cursor: pointer; }
+.date-field :deep(.v-input__details) { padding-inline: 0; }
+.date-field :deep(.v-messages) { opacity: 1; color: rgb(var(--v-theme-text-secondary)); }
+.date-field :deep(.v-input--error .v-messages) { color: rgb(var(--v-theme-error)); }
 .date-field :deep(input) { cursor: pointer; }
 .date-field :deep(input::placeholder) { color: rgb(var(--v-theme-text-secondary)); opacity: 1; }
 </style>

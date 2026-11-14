@@ -1,12 +1,13 @@
 import type { RouteRecordRaw } from 'vue-router'
 
 const Placeholder = () => import('@/views/shared/PlaceholderView.vue')
+const SchoolDetail = () => import('@/views/school/SchoolDetailView.vue')
 const SchoolList = () => import('@/views/school/SchoolListView.vue')
 
 export const schoolRoutes: RouteRecordRaw[] = [
   { path: '/sekolah', name: 'sekolah', component: SchoolList, meta: { title: 'Sekolah' } },
   { path: '/sekolah/baru', name: 'sekolah-baru', component: Placeholder, meta: { title: 'Tambah sekolah' } },
-  { path: '/sekolah/:id', name: 'sekolah-detail', component: Placeholder, meta: { title: 'Halaman sekolah' } },
+  { path: '/sekolah/:id', name: 'sekolah-detail', component: SchoolDetail, meta: { title: 'Halaman sekolah' } },
   { path: '/penugasan', name: 'penugasan', component: Placeholder, meta: { title: 'Penugasan' } },
   { path: '/target-retention', name: 'target-retention', component: Placeholder, meta: { title: 'Target retention' } },
   { path: '/impor-ekspor', name: 'impor-ekspor', component: Placeholder, meta: { title: 'Impor & ekspor' } },

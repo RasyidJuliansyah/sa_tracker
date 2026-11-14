@@ -77,3 +77,14 @@ export function renewalStatus(contracts: MockContract[], today = MOCK_TODAY): Re
   if (daysLeft <= ENDING_SOON_DAYS) return { kind: 'ENDING_SOON', daysLeft }
   return { kind: 'RUNNING', daysLeft }
 }
+
+export function addDays(iso: string, days: number): string {
+  return new Date(toUtc(iso) + days * dayMs).toISOString().slice(0, 10)
+}
+
+/** Usulan periode perpanjangan: mulai sehari setelah kontrak lama berakhir, durasi sama dengan kontrak lama (min. 1 hari). */
+export function suggestRenewalPeriod(base: Period): Period {
+  const start = addDays(base.end, 1)
+  const length = Math.max(1, daysBetween(base.start, base.end))
+  return { start, end: addDays(start, length) }
+}
