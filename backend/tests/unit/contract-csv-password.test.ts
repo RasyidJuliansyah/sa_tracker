@@ -45,3 +45,20 @@ describe('password sementara', () => {
     expect(a).not.toBe(b)
   })
 })
+
+import { currentContract, renewalStatus } from '../../src/services/contract-rules.js'
+describe('status perpanjangan', () => {
+  const c = (id: number, s: string, e: string, prev: number | null = null) => ({ id, startDate: s, endDate: e, previousContractId: prev })
+  it('berjalan > 60 hari = RUNNING, ≤ 60 = ENDING_SOON, lewat = EXPIRED', () => {
+    expect(renewalStatus([c(1, '2026-01-01', '2027-06-30')], '2026-11-14')?.kind).toBe('RUNNING')
+    expect(renewalStatus([c(1, '2026-01-01', '2027-01-10')], '2026-11-14')?.kind).toBe('ENDING_SOON')
+    expect(renewalStatus([c(1, '2025-01-01', '2026-11-13')], '2026-11-14')?.kind).toBe('EXPIRED')
+  })
+  it('sudah diperpanjang = RENEWED dan kontrak berjalan dipilih', () => {
+    const list = [c(1, '2025-12-01', '2026-11-30'), c(2, '2026-12-01', '2027-11-30', 1)]
+    expect(currentContract(list, '2026-11-14')?.id).toBe(1)
+    expect(renewalStatus(list, '2026-11-14')?.kind).toBe('RENEWED')
+    expect(currentContract(list, '2026-12-05')?.id).toBe(2)
+  })
+  it('tanpa kontrak: null', () => { expect(renewalStatus([], '2026-11-14')).toBeNull() })
+})

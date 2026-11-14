@@ -28,3 +28,15 @@ Akun: `{ id, name, email, role, timezone, status: ACTIVE|MUST_CHANGE_PASSWORD|IN
 
 ## Audit log (B4)
 `GET /audit-logs?entityType&entityId&action&actorId&from&to&page&pageSize` (ADMIN, MANAGER; tanggal yyyy-mm-dd WIB) → `{ total, items: [{ id, at, action, entityType, entityId, actor, actorRole, changes }] }`.
+
+## Sekolah dan kontrak (B5)
+Tanggal `yyyy-mm-dd`. AGENT hanya melihat sekolah yang sedang ditugaskan kepadanya (sekolah lain → 404).
+Ringkasan sekolah: `{ id, npsn, name, lmsSchoolId, city, timezone, jenjang:{id,name}, package:{id,name}, agent:{id,name,sharePercent}|null, contract:{id,type,previousContractId,signedDate,start,end,value,note}|null, status:{kind: RENEWED|EXPIRED|ENDING_SOON|RUNNING, daysLeft}|null }`.
+| Metode | Path | Peran | Keterangan |
+|---|---|---|---|
+| GET | `/schools?query&jenjangId&packageId&status&agentId(id\|NONE)&page&pageSize` | semua (AGENT: milik sendiri) | `{ total, items }` |
+| POST | `/schools` | ADMIN, MANAGER | Sekolah + `contract` pertama wajib (+ `agentId` opsional). NPSN 8 digit unik, ID LMS unik. → 201 detail |
+| GET | `/schools/:id` | semua (AGENT: milik sendiri) | `{ school (+alamat, PIC, 4 tanggal), contracts[], assignments[] }` |
+| PATCH | `/schools/:id` | ADMIN, MANAGER | Sebagian field sekolah; audit berisi sebelum/sesudah |
+| POST | `/schools/:id/contracts` | ADMIN, MANAGER | Perpanjangan: `{ previousContractId, signedDate, start, end, value, note }`. Periode tidak boleh tumpang tindih, satu perpanjangan per kontrak. |
+| GET | `/schools/:id/changes` | ADMIN, MANAGER | Riwayat perubahan sekolah dan kontraknya (dari audit log) |

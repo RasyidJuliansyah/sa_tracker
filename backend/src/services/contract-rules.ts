@@ -33,3 +33,27 @@ export function validateRenewal(args: { signedDate: string | null | undefined; p
     throw new AppError('CONFLICT', 'Kontrak ini sudah punya perpanjangan.')
   }
 }
+
+export const ENDING_SOON_DAYS = 60
+export interface ContractLite { id: number; startDate: string; endDate: string; previousContractId: number | null }
+export type RenewalKind = 'RENEWED' | 'EXPIRED' | 'ENDING_SOON' | 'RUNNING'
+
+const dayNum = (k: string) => Math.round(Date.parse(`${k}T00:00:00Z`) / 86_400_000)
+export const daysBetween = (from: string, to: string) => dayNum(to) - dayNum(from)
+
+/** Kontrak yang ditampilkan: yang berjalan; bila tidak ada, yang terakhir sudah mulai; bila belum ada yang mulai, yang pertama. */
+export function currentContract<T extends ContractLite>(contracts: T[], todayWib: string): T | undefined {
+  const sorted = [...contracts].sort((a, b) => b.endDate.localeCompare(a.endDate))
+  return sorted.find((c) => c.startDate <= todayWib && todayWib <= c.endDate) ?? sorted.find((c) => c.startDate <= todayWib) ?? sorted[0]
+}
+
+/** Status perpanjangan kontrak yang ditampilkan: sudah diperpanjang, lewat tempo, segera berakhir (≤ 60 hari), atau berjalan. */
+export function renewalStatus(contracts: ContractLite[], todayWib: string): { kind: RenewalKind; daysLeft: number } | null {
+  const cur = currentContract(contracts, todayWib)
+  if (!cur) return null
+  const daysLeft = daysBetween(todayWib, cur.endDate)
+  if (contracts.some((c) => c.previousContractId === cur.id)) return { kind: 'RENEWED', daysLeft }
+  if (daysLeft < 0) return { kind: 'EXPIRED', daysLeft }
+  if (daysLeft <= ENDING_SOON_DAYS) return { kind: 'ENDING_SOON', daysLeft }
+  return { kind: 'RUNNING', daysLeft }
+}
