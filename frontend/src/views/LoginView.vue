@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import LabeledField from '@/components/LabeledField.vue'
-import logoIkon from '@/assets/login/logo-ikon.svg'
+import logoIkon from '@/assets/brand/logo-ikon.svg'
 import logoPutih from '@/assets/login/logo-skolla-putih.png'
-import logoTeks from '@/assets/login/logo-teks.svg'
+import logoTeks from '@/assets/brand/logo-teks.svg'
 
 // Desain: Figma "SA" → 01 Umum → Login (Desktop, Galat, HP).
 const highlights = [

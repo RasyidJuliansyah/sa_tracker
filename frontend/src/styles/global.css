@@ -83,3 +83,31 @@
   width: 20px;
   height: 20px;
 }
+
+/* Tombol (Figma: Tombol). Tinggi 40px, padding 20px.
+   Sekunder = variant="outlined" (putih, border 1px token border, teks brand).
+   Teks = variant="text". Bahaya = color="error". */
+.v-btn {
+  padding: 0 20px;
+}
+.v-btn--variant-outlined {
+  background: rgb(var(--v-theme-surface));
+  border-color: rgb(var(--v-theme-border));
+  border-width: 1px;
+  color: rgb(var(--v-theme-primary));
+}
+
+/* Textarea: tinggi mengikuti isi, bukan 42px seperti field satu baris */
+.v-textarea .v-field {
+  height: auto;
+}
+.v-textarea .v-field__input {
+  min-height: 0;
+  padding: 10px 0;
+  align-items: flex-start;
+}
+
+/* Garis bawah bar digambar di dalam tinggi bar (App bar 70px, HP/Top bar 56px), bukan menambah tinggi */
+.v-app-bar.v-toolbar {
+  box-shadow: inset 0 -1px 0 rgb(var(--v-theme-border)) !important;
+}

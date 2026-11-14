@@ -27,7 +27,7 @@ export const vuetify = createVuetify({
     },
   },
   defaults: {
-    VBtn: { color: 'primary', variant: 'flat', rounded: 'pill' },
+    VBtn: { color: 'primary', variant: 'flat', rounded: 'pill', height: 40 },
     VCard: { flat: true, border: true, rounded: 'lg' },
     VChip: { rounded: 'pill', variant: 'flat' },
     VTextField: fieldDefaults,
@@ -35,7 +35,7 @@ export const vuetify = createVuetify({
     VAutocomplete: fieldDefaults,
     VCombobox: fieldDefaults,
     VTextarea: { variant: 'outlined' },
-    VAppBar: { flat: true, height: 70, border: 'b' },
+    VAppBar: { flat: true, height: 70 },
     VNavigationDrawer: { width: 220, border: 'e' },
   },
 })

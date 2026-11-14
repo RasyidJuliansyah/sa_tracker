@@ -15,7 +15,7 @@ def test_desktop_menampilkan_panel_merek_dan_form(page: Page) -> None:
     card = page.get_by_test_id("login-card").bounding_box()
     assert card["width"] == 482
     # Field setinggi 42px
-    assert page.locator("#login-email").locator("xpath=ancestor::div[contains(@class,'v-field')][1]").bounding_box()["height"] == 42
+    assert page.locator("#login-email").locator("xpath=ancestor::div[contains(concat(' ',normalize-space(@class),' '),' v-field ')][1]").bounding_box()["height"] == 42
 
 
 def test_hp_menyembunyikan_panel_merek(page: Page) -> None:

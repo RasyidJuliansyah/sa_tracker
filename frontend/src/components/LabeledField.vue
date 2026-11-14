@@ -5,6 +5,7 @@ defineProps<{
   label: string
   id: string
   errorMessages?: string | string[]
+  multiline?: boolean
 }>()
 const model = defineModel<string>({ default: '' })
 </script>
@@ -12,17 +13,19 @@ const model = defineModel<string>({ default: '' })
 <template>
   <div class="labeled-field">
     <label :for="id" class="labeled-field__label">{{ label }}</label>
-    <v-text-field
+    <component
+      :is="multiline ? 'v-textarea' : 'v-text-field'"
       :id="id"
       v-model="model"
       :error-messages="errorMessages"
       hide-details="auto"
+      :rows="multiline ? 5 : undefined"
       v-bind="$attrs"
     >
       <template v-for="(_, slot) in $slots" #[slot]="scope">
         <slot :name="slot" v-bind="scope ?? {}" />
       </template>
-    </v-text-field>
+    </component>
   </div>
 </template>
 
