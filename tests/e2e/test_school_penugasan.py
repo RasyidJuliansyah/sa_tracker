@@ -73,5 +73,6 @@ def test_tombol_tugaskan_sekolah_memilih_sekolah_dan_esc_menutup(page: Page) -> 
     expect(page.get_by_test_id("assignment-row")).to_have_count(5)
     page.get_by_role("button", name="Pindahkan SMA Cendekia Ambon").click()
     expect(page.get_by_role("dialog").get_by_text("Dari: Dimas Saputra")).to_be_visible()
+    page.wait_for_timeout(500)  # tunggu animasi dialog selesai dan fokus pindah ke dialog
     page.keyboard.press("Escape")
     expect(page.get_by_role("dialog")).to_have_count(0)
