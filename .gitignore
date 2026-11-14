@@ -25,3 +25,8 @@ uploads/
 
 # Prisma Client hasil generate
 backend/src/generated/
+
+# Python
+.venv/
+__pycache__/
+.pytest_cache/

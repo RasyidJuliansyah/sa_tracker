@@ -1,0 +1,50 @@
+/* Penyesuaian yang tidak tersedia sebagai prop Vuetify. Nilai dari docs/design-system/skolla-lms/tokens.json. */
+
+.v-application,
+.v-application [class*='text-'],
+.v-btn,
+.v-field,
+.v-chip,
+.v-data-table {
+  font-family: 'Rubik', system-ui, -apple-system, sans-serif !important;
+}
+
+/* Fokus terlihat: outline 2px brand, offset 2px (components/Input.md, Button.md) */
+:focus-visible {
+  outline: 2px solid rgb(var(--v-theme-primary));
+  outline-offset: 2px;
+}
+
+/* Tombol: bobot 600, tanpa huruf kapital semua */
+.v-btn {
+  text-transform: none;
+  letter-spacing: normal;
+  font-weight: 600;
+}
+
+/* Chip: tinggi 26px, teks 12px bobot 600 */
+.v-chip {
+  --v-chip-height: 26px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.1px;
+}
+
+/* Input: tinggi 42px, radius 5px yang sama di state galat */
+.v-input--density-compact {
+  --v-input-control-height: 42px;
+}
+.v-field {
+  --v-field-border-radius: 5px;
+  border-radius: 5px;
+}
+
+/* Tabel data: header 47px berlatar canvas-table, baris 52px */
+.v-data-table thead th {
+  background: rgb(var(--v-theme-canvas-table));
+  height: 47px;
+  font-weight: 500;
+}
+.v-data-table tbody td {
+  height: 52px;
+}
