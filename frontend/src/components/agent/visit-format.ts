@@ -1,0 +1,47 @@
+import { IANA_ZONE, formatClock, wibDateKey } from '@/utils/timezone'
+import { formatDuration } from '@/utils/format'
+import type { Visit } from '@/mocks/agent'
+
+const MS_PER_MINUTE = 60_000
+
+/** "Sab, 14 Nov" menurut WIB (tanggal rekap selalu WIB). */
+export function formatVisitDay(iso: string): string {
+  return new Intl.DateTimeFormat('id-ID', { weekday: 'short', day: 'numeric', month: 'short', timeZone: IANA_ZONE.WIB }).format(new Date(iso))
+}
+
+export function visitMinutes(visit: Visit, now: Date): number {
+  const end = visit.checkOutAt ? new Date(visit.checkOutAt) : now
+  return Math.max(0, (end.getTime() - new Date(visit.checkInAt).getTime()) / MS_PER_MINUTE)
+}
+
+/** "09.15 WIB" untuk kunjungan berjalan, "13.05–14.10 WIB" untuk yang selesai; zona = zona agent pada kunjungan. */
+export function formatVisitClockRange(visit: Visit): string {
+  const start = formatClock(visit.checkInAt, visit.timezone)
+  if (!visit.checkOutAt) return start
+  const end = formatClock(visit.checkOutAt, visit.timezone)
+  return `${start.replace(` ${visit.timezone}`, '')}–${end}`
+}
+
+/** Baris ringkas: "Jum, 13 Nov · 13.05–14.10 WIB · 1 j 5 m" atau "Sab, 14 Nov · 09.15 WIB · berjalan". */
+export function formatVisitMeta(visit: Visit, now: Date): string {
+  const tail = visit.status === 'ONGOING' ? 'berjalan' : formatDuration(visitMinutes(visit, now))
+  return `${formatVisitDay(visit.checkInAt)} · ${formatVisitClockRange(visit)} · ${tail}`
+}
+
+/** "hari ini" bila kunjungan terakhir di hari WIB yang sama dengan sekarang, selain itu "12 Nov 2026". */
+export function formatLastVisit(iso: string | null, now: Date): string {
+  if (!iso) return 'Belum pernah dikunjungi'
+  const same = wibDateKey(iso) === wibDateKey(now)
+  const text = same ? 'hari ini' : new Intl.DateTimeFormat('id-ID', { day: 'numeric', month: 'short', year: 'numeric', timeZone: IANA_ZONE.WIB }).format(new Date(iso))
+  return `Terakhir dikunjungi ${text}`
+}
+
+/**
+ * Waktu kunjungan terakhir sekolah: terbaru antara data sekolah dan kunjungan yang tercatat sejak `since`
+ * (kunjungan hari ini atau yang dibuat di sesi ini). Riwayat tiruan lama sengaja tidak dipakai di sini.
+ */
+export function latestVisitAt(visits: Visit[], schoolId: number, fallback: string | null, since: string): string | null {
+  const times = visits.filter((v) => v.schoolId === schoolId && v.checkInAt >= since).map((v) => v.checkInAt)
+  if (fallback) times.push(fallback)
+  return times.sort().pop() ?? null
+}
