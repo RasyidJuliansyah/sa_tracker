@@ -158,3 +158,30 @@ def test_beranda_agent_memuat_data_nyata(page: Page) -> None:
     login(page, "citra@skolla.test")
     expect(page.get_by_role("heading", name="Halo, Citra")).to_be_visible()
     expect(page.get_by_text("Kontrak perlu perhatian")).to_be_visible()
+
+
+# ---- B9: impor dan ekspor CSV lewat server ----
+def test_impor_csv_pratinjau_lalu_simpan_dan_ekspor(page: Page, tmp_path) -> None:
+    import random
+
+    login(page, "manager@skolla.test")
+    npsn = str(random.randint(10000000, 99999999))
+    csv = (
+        "npsn,nama_sekolah,jenjang,paket,zona_waktu,kota,alamat,pic,kontak_pic,id_lms,tanggal_ttd,tanggal_mulai,tanggal_berakhir,nilai_kontrak\n"
+        f"{npsn},SMP Impor Live,SMP,Skolla Basic,WIB,Bogor,Jl X,Ibu Y,0812,,2026-01-01,2026-02-01,2027-01-31,25000000\n"
+        "12345678,Jenjang Salah,SMU,Skolla Basic,,,,,,,,,,\n"
+    )
+    f = tmp_path / "impor.csv"
+    f.write_text(csv, encoding="utf-8")
+    page.goto("/impor-ekspor")
+    page.set_input_files("#import-file", str(f))
+    expect(page.get_by_role("button", name="Semua (2)")).to_be_visible()
+    expect(page.get_by_role("button", name="Gagal (1)")).to_be_visible()
+    expect(page.get_by_text('Jenjang "SMU" tidak ada di master jenjang')).to_be_visible()
+    page.get_by_role("button", name="Simpan 1 baris valid").click()
+    expect(page.get_by_text("Impor selesai")).to_be_visible()
+    page.goto("/impor-ekspor?tab=ekspor")
+    with page.expect_download() as dl:
+        page.get_by_role("button", name="Unduh CSV").first.click()
+    assert npsn in open(dl.value.path(), encoding="utf-8-sig").read()
+    expect(page.get_by_test_id("export-log").first).to_contain_text("Data sekolah")

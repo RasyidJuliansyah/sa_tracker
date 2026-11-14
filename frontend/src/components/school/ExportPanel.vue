@@ -3,59 +3,99 @@ import { onMounted, ref, watch } from 'vue'
 import LabeledSelect from '@/components/admin/LabeledSelect.vue'
 import { addExportLog, listAgents, listExports, listSchools } from '@/services/school'
 import { LEVELS, type MockExportLog } from '@/mocks/school'
+import { api, apiText } from '@/services/http'
+import { useReferenceStore } from '@/stores/reference'
+import { MOCK_AUTH } from '@/stores/session'
 import { buildContractExport, buildSchoolExport, buildVisitExport } from './export-builders'
 import { downloadCsv } from './csv'
 import { formatDateTimeWib } from './school-format'
 
 // Ekspor CSV (Figma 23:911): memakai filter yang sedang aktif; setiap ekspor tercatat di audit log.
-const levelItems = [{ title: 'Semua', value: null }, ...LEVELS.map((v) => ({ title: v, value: v as string | null }))]
+const reference = useReferenceStore()
+const levelNames = MOCK_AUTH ? [...LEVELS] : reference.levels.map((l) => l.name)
+const levelItems = [{ title: 'Semua', value: null }, ...levelNames.map((v) => ({ title: v, value: v as string | null }))]
 const statusItems = [
   { title: 'Semua', value: null }, { title: 'Berjalan', value: 'RUNNING' }, { title: 'Segera berakhir', value: 'ENDING_SOON' },
   { title: 'Berakhir, belum diperpanjang', value: 'EXPIRED' }, { title: 'Sudah diperpanjang', value: 'RENEWED' },
 ]
 const yearItems = ['2027', '2026', '2025', '2024'].map((y) => ({ title: y, value: y as string | null }))
-const rangeItems = [{ title: '1–14 Nov 2026', value: '1–14 Nov 2026' }, { title: '1–7 Nov 2026', value: '1–7 Nov 2026' }]
+const wibNow = new Date(Date.now() + 7 * 3_600_000)
+const ymd = (d: Date) => d.toISOString().slice(0, 10)
+const monthStart = new Date(Date.UTC(wibNow.getUTCFullYear(), wibNow.getUTCMonth(), 1))
+const prevStart = new Date(Date.UTC(wibNow.getUTCFullYear(), wibNow.getUTCMonth() - 1, 1))
+const prevEnd = new Date(Date.UTC(wibNow.getUTCFullYear(), wibNow.getUTCMonth(), 0))
+const fmtMonth = (d: Date) => new Intl.DateTimeFormat('id-ID', { month: 'long', year: 'numeric', timeZone: 'UTC' }).format(d)
+// Mode API: nilai = "dari|sampai" (WIB). Mode tiruan: teks tetap seperti Figma.
+const rangeItems = MOCK_AUTH
+  ? [{ title: '1–14 Nov 2026', value: '1–14 Nov 2026' }, { title: '1–7 Nov 2026', value: '1–7 Nov 2026' }]
+  : [{ title: `${fmtMonth(monthStart)} (sampai hari ini)`, value: `${ymd(monthStart)}|${ymd(wibNow)}` }, { title: fmtMonth(prevStart), value: `${ymd(prevStart)}|${ymd(prevEnd)}` }, { title: 'Semua waktu', value: '|' }]
 const agentItems = [{ title: 'Semua', value: null }, ...listAgents().map((a) => ({ title: a.name, value: String(a.id) as string | null }))]
 
 const level = ref<string | null>(null)
 const status = ref<string | null>(null)
 const year = ref<string | null>('2026')
 const contractAgent = ref<string | null>(null)
-const range = ref<string | null>('1–14 Nov 2026')
+const range = ref<string | null>(rangeItems[0]!.value)
 const visitAgent = ref<string | null>(null)
 const schoolCount = ref(0)
-const contractCount = ref(26)
-const visitCount = ref(44)
+const contractCount = ref(MOCK_AUTH ? 26 : 0)
+const visitCount = ref(MOCK_AUTH ? 44 : 0)
 const logs = ref<MockExportLog[]>([])
 const snack = ref({ show: false, text: '' })
 
+function qs(extra: Record<string, string | null | undefined>) {
+  const p = new URLSearchParams()
+  for (const [k, v] of Object.entries(extra)) if (v) p.set(k, v)
+  return p
+}
+const levelId = (name: string | null) => reference.levels.find((l) => l.name === name)?.id
+const dates = () => { const [from, to] = (range.value ?? '|').split('|'); return { from, to } }
+const schoolsQuery = () => qs({ jenjangId: level.value ? String(levelId(level.value) ?? '') : null, status: status.value })
+const contractsQuery = () => qs({ year: year.value, agentId: contractAgent.value })
+const visitsQuery = () => qs({ ...dates(), agentId: visitAgent.value })
+
 async function refresh() {
   schoolCount.value = (await listSchools({ query: '', level: level.value, pkg: null, status: status.value, agent: null })).length
+  if (!MOCK_AUTH) {
+    const dry = async (kind: string, q: URLSearchParams) => (await api<{ rows: number }>(`/export/${kind}?${q}&dryRun=1`)).rows
+    ;[contractCount.value, visitCount.value] = await Promise.all([dry('contracts', contractsQuery()), dry('visits', visitsQuery())])
+  }
   logs.value = await listExports()
 }
 onMounted(refresh)
-watch([level, status], refresh)
+watch([level, status, year, contractAgent, range, visitAgent], refresh)
 
 async function done(kind: string, filter: string, rows: number, file: string, content: string) {
   downloadCsv(file, content)
-  await addExportLog(kind, filter, rows)
+  if (MOCK_AUTH) await addExportLog(kind, filter, rows)
   await refresh()
   snack.value = { show: true, text: `${kind}: ${rows} baris diunduh dan dicatat di audit log` }
 }
+/** Mode API: server membuat CSV dan mencatat audit EXPORT; label filter ikut dikirim untuk catatan. */
+async function serverExport(kind: 'schools' | 'contracts' | 'visits', title: string, q: URLSearchParams, label: string, file: string) {
+  q.set('label', label)
+  const r = await apiText(`/export/${kind}?${q}`)
+  await done(title, label, r.rows, file, r.text)
+}
 async function exportSchools() {
-  const r = await buildSchoolExport({ level: level.value, status: status.value })
   const f = [level.value && `Jenjang ${level.value}`, status.value && statusItems.find((s) => s.value === status.value)?.title].filter(Boolean).join(' • ')
+  if (!MOCK_AUTH) return serverExport('schools', 'Data sekolah', schoolsQuery(), f || 'Semua', 'data-sekolah.csv')
+  const r = await buildSchoolExport({ level: level.value, status: status.value })
   await done('Data sekolah', f || 'Semua', r.rows, 'data-sekolah.csv', r.content)
 }
 async function exportContracts() {
-  const r = await buildContractExport(Number(year.value), contractAgent.value)
   const agent = agentItems.find((a) => a.value === contractAgent.value)?.title
-  await done('Riwayat kontrak', `Tahun berakhir ${year.value}${contractAgent.value ? ` • ${agent}` : ''}`, r.rows, 'riwayat-kontrak.csv', r.content)
+  const label = `Tahun berakhir ${year.value}${contractAgent.value ? ` • ${agent}` : ''}`
+  if (!MOCK_AUTH) return serverExport('contracts', 'Riwayat kontrak', contractsQuery(), label, 'riwayat-kontrak.csv')
+  const r = await buildContractExport(Number(year.value), contractAgent.value)
+  await done('Riwayat kontrak', label, r.rows, 'riwayat-kontrak.csv', r.content)
 }
 async function exportVisits() {
-  const r = buildVisitExport(visitAgent.value)
   const agent = agentItems.find((a) => a.value === visitAgent.value)?.title
-  await done('Rekap kunjungan', `${range.value} • ${visitAgent.value ? agent : 'semua agent'}`, r.rows, 'rekap-kunjungan.csv', r.content)
+  const label = `${rangeItems.find((r) => r.value === range.value)?.title ?? ''} • ${visitAgent.value ? agent : 'semua agent'}`
+  if (!MOCK_AUTH) return serverExport('visits', 'Rekap kunjungan', visitsQuery(), label, 'rekap-kunjungan.csv')
+  const r = buildVisitExport(visitAgent.value)
+  await done('Rekap kunjungan', label, r.rows, 'rekap-kunjungan.csv', r.content)
 }
 </script>
 

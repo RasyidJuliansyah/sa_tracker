@@ -135,3 +135,7 @@ export async function listTargets(): Promise<MockTargetYear[]> {
 export async function saveTarget(year: number, percent: number): Promise<void> {
   await api(`/retention-targets/${year}`, { method: 'PUT', body: { targetPercent: percent } })
 }
+
+export async function listExports(): Promise<import('@/mocks/school').MockExportLog[]> {
+  return (await api<{ items: import('@/mocks/school').MockExportLog[] }>('/export/log')).items
+}

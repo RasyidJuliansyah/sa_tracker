@@ -6,6 +6,8 @@ import StatCard from '@/components/StatCard.vue'
 import StatusChip from '@/components/StatusChip.vue'
 import { previewImport, summarize, type ImportRow } from './import-rules'
 import { commitImport, existingNpsnSet } from '@/services/school'
+import { api } from '@/services/http'
+import { MOCK_AUTH } from '@/stores/session'
 
 // Impor CSV (Figma 23:596): pratinjau baris valid dan gagal sebelum disimpan. Baris gagal tidak disimpan.
 const step = ref<'upload' | 'preview' | 'saved'>('upload')
@@ -17,6 +19,7 @@ const page = ref(1)
 const perPage = ref(10)
 const input = ref<HTMLInputElement | null>(null)
 const result = ref({ created: 0, updated: 0 })
+const rawText = ref('')
 
 const summary = computed(() => summarize(rows.value))
 const shown = computed(() => {
@@ -30,8 +33,9 @@ const chips = computed(() => [
   { value: 'gagal' as const, label: `Gagal (${summary.value.failed})` },
 ])
 
-function load(text: string, name: string) {
-  const parsed = previewImport(text, existingNpsnSet())
+async function load(text: string, name: string) {
+  rawText.value = text
+  const parsed = MOCK_AUTH ? previewImport(text, existingNpsnSet()) : await api<{ rows: ImportRow[]; fileError: string }>('/import/schools/preview', { method: 'POST', body: { csv: text } })
   fileError.value = parsed.fileError
   if (parsed.fileError) return
   rows.value = parsed.rows
@@ -43,15 +47,15 @@ function load(text: string, name: string) {
 async function onFile(e: Event) {
   const file = (e.target as HTMLInputElement).files?.[0]
   if (!file) return
-  load(await file.text(), file.name)
+  await load(await file.text(), file.name)
   if (input.value) input.value.value = ''
 }
 async function useSample() {
   const res = await fetch('/templates/sekolah-november-2026.csv')
-  load(await res.text(), 'sekolah-november-2026.csv')
+  await load(await res.text(), 'sekolah-november-2026.csv')
 }
 async function save() {
-  result.value = await commitImport(rows.value)
+  result.value = MOCK_AUTH ? await commitImport(rows.value) : await api<{ created: number; updated: number }>('/import/schools/commit', { method: 'POST', body: { csv: rawText.value } })
   step.value = 'saved'
 }
 function reset() { step.value = 'upload'; rows.value = []; fileError.value = '' }

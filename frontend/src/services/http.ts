@@ -45,3 +45,22 @@ export async function fetchImageUrl(path: string): Promise<string | null> {
     return null
   }
 }
+
+/** Ambil teks (mis. CSV) dari API; jumlah baris dari header X-Row-Count. */
+export async function apiText(path: string): Promise<{ text: string; rows: number }> {
+  let res: Response
+  try {
+    res = await fetch(BASE + path, { credentials: 'include' })
+  } catch {
+    const e = new ApiError(0, 'NETWORK', 'Tidak dapat terhubung ke server. Periksa koneksi Anda.')
+    apiErrorMessage.value = e.message
+    throw e
+  }
+  if (!res.ok) {
+    const data = await res.json().catch(() => null)
+    const e = new ApiError(res.status, data?.error?.code ?? 'UNKNOWN', data?.error?.message ?? 'Terjadi kesalahan.')
+    apiErrorMessage.value = e.message
+    throw e
+  }
+  return { text: await res.text(), rows: Number(res.headers.get('X-Row-Count') ?? 0) }
+}
