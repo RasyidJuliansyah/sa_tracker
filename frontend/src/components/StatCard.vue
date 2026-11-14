@@ -21,8 +21,8 @@ defineProps<{
     <div class="stat-card__body">
       <p class="stat-card__label">{{ label }}</p>
       <p class="stat-card__value">{{ value ?? '–' }}</p>
-      <div v-if="change" class="stat-card__change">
-        <ChangeChip :direction="change.direction" :label="change.label" />
+      <div v-if="change || comparison" class="stat-card__change">
+        <ChangeChip v-if="change" :direction="change.direction" :label="change.label" />
         <span v-if="comparison" class="stat-card__comparison">{{ comparison }}</span>
       </div>
     </div>
