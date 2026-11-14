@@ -17,7 +17,7 @@ describe.skipIf(!ok)('penugasan dan target retention (database uji)', () => {
   const cookies: Record<string, string> = {}
   const ids: Record<string, number> = {}
   let jenjangId = 0, packageId = 0
-  const npsn = (n: number) => String(10000000 + (stamp % 80000000) + n)
+  const npsn = (n: number) => String(10000000 + (stamp % 80000000) + n + 5000)
 
   const call = (who: string | null, path: string, method = 'GET', body?: unknown) =>
     fetch(url + path, { method, headers: { 'content-type': 'application/json', origin: 'http://localhost:3010', ...(who ? { cookie: cookies[who]! } : {}) }, body: body ? JSON.stringify(body) : undefined })
