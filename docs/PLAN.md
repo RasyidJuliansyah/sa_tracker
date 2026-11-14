@@ -17,7 +17,7 @@ Laporan kunjungan agent service account ke sekolah pelanggan LMS Skolla belum te
 ## MVP (versi pertama)
 
 ### Akses
-- [ ] **Login dengan email kantor dan password.** Hanya email yang didaftarkan admin dan berstatus aktif yang bisa masuk. Akun baru mendapat password sementara dan wajib menggantinya saat login pertama.
+- [ ] **Login dengan email kantor dan password.** Hanya email yang didaftarkan admin dan berstatus aktif yang bisa masuk. Akun baru mendapat password sementara dari admin. Tidak ada layar ganti password di MVP: password hanya diatur ulang oleh admin.
 - [ ] **Pembatasan per peran.** Dicek di server, bukan hanya dengan menyembunyikan menu. Ringkasan hak akses ada di bagian Hak akses.
 
 ### Halaman admin
@@ -201,7 +201,7 @@ Karena ID berurutan mudah ditebak (`/visits/1`, `/visits/2`, dan seterusnya), se
 1. Buat `frontend/` dengan generator Vite (Vue + TypeScript) dan `backend/` dengan Express + TypeScript strict, mengikuti struktur di `docs/architecture.md`. Pasang Vuetify 3 dan Pinia, lalu isi tema, `defaults`, locale Indonesia, dan font Rubik sesuai `docs/design-system.md`. Siapkan Vitest di kedua folder, `tests/requirements.txt`, dan konfigurasi `pytest-playwright`.
 2. Salin schema dari `docs/data-model.md` ke `backend/prisma/schema.prisma`, siapkan `prisma.config.ts`, jalankan `prisma migrate dev` di lokal, dan simpan SQL hasilnya sebagai `backend/sql/deltas/001_init.sql` yang idempotent untuk produksi. Lalu buat seed berisi satu admin, satu manager, tiga agent (WIB, WITA, WIT), beberapa jenjang dan paket, sekolah contoh dengan kontrak yang berakhir di tahun berjalan dan tahun depan, sebagian sudah diperpanjang dengan nilai lebih kecil, sama, dan lebih besar, penugasan, dan kunjungan contoh selama dua bulan, termasuk contoh sekolah A dan B di bagian Retention dan target supaya dashboard dan perbandingan periode bisa dites.
 3. Helper audit log dan log aplikasi JSON, dipakai sejak fitur pertama.
-4. Login, ganti password pertama kali, pembatasan akses per peran, dan log login.
+4. Login, pembatasan akses per peran, dan log login (tanpa ganti password; reset oleh admin).
 5. Kerangka layout dengan `VNavigationDrawer` dan `VAppBar`, ditambah komponen sendiri StatCard, EmptyState, dan chip perubahan angka sesuai `docs/design-system.md`.
 6. Halaman admin: kelola akun.
 7. Halaman admin: master jenjang dan paket.

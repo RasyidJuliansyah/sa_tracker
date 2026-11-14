@@ -31,7 +31,7 @@ Semua primary key `INT AUTO_INCREMENT`. Di MySQL nama kolomnya `<entitas>_id`, s
 - **Penugasan sekolah** opsional dan banyak-ke-banyak. Batas agent aktif per sekolah diatur konstanta `MAX_AGENTS_PER_SCHOOL` (MVP: 1), ditegakkan di service.
 - **Audit log** di `audit_logs` hanya ditambah, tidak pernah diubah atau dihapus oleh aplikasi. Kolom `changes` (JSON) menyimpan nilai sebelum dan sesudah.
 - **Zona waktu** memakai enum `WIB`, `WITA`, `WIT`. Saat check-in, zona waktu agent disalin ke `visits.timezone`.
-- **Login** memakai email kantor dan password. Akun hanya dibuat admin, dengan `must_change_password` untuk login pertama.
+- **Login** memakai email kantor dan password. Akun hanya dibuat admin, dengan password sementara. `must_change_password` hanya penanda "akun baru atau baru direset" (terhapus saat login berhasil); tidak ada alur ganti password di MVP.
 - **Foto** disimpan di disk server. Database hanya menyimpan path relatifnya.
 - **Pencatatan revenue per transaksi** (tabel `school_revenues` di revisi sebelumnya) dan **target manual per agent** (`agent_targets`) dihapus dari MVP. Pembayaran termin akan dirancang ulang di Fase 2.
 

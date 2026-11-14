@@ -6,7 +6,7 @@
 - Tujuan produk: agent service account (after sales LMS Skolla) melaporkan setiap kunjungan ke sekolah, manager memantau rekap harian dan laporan tiap agent, dan admin mengelola akun serta data sekolah klien.
 - Pengguna: admin, manager service account, agent service account (mengisi laporan dari HP).
 - Hak akses per peran: tabel Hak akses di `docs/PLAN.md`.
-- Status: MVP, belum ada kode.
+- Status: seluruh layar dan API MVP sudah dibangun; tahap B10 (audit keamanan, Docker, rilis) berjalan. Rencana backend: `docs/backend-plan.md`; serah terima sesi: `HANDOFF.md`.
 - Rencana dan daftar fitur MVP: `docs/PLAN.md`. Model data: `docs/data-model.md`. Arsitektur: `docs/architecture.md`. Tampilan: `docs/design-system.md`. Baca keempatnya di setiap sesi baru.
 
 ## Tech stack & arsitektur
@@ -16,7 +16,7 @@
 - Package manager: npm
 - Deploy: Docker di server internal Skolla
 - Database: MySQL lewat Prisma. Model data di `docs/data-model.md`
-- Autentikasi: email kantor + password. Akun hanya dibuat admin, dengan password sementara yang wajib diganti saat login pertama
+- Autentikasi: email kantor + password. Akun hanya dibuat admin, dengan password sementara. Tidak ada layar ganti password di MVP: password hanya diatur ulang oleh admin (reset)
 - Penyimpanan foto: disk server, folder dari env `PHOTO_STORAGE_DIR`, di-mount sebagai volume Docker
 - Struktur repo: `backend/` dan `frontend/`, lihat `docs/architecture.md`. Pembagian halaman frontend per peran:
   - Admin: akun, master jenjang dan paket, audit log
