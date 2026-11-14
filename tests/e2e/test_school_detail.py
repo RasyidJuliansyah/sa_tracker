@@ -62,6 +62,7 @@ def test_perpanjangan_tersimpan_menambah_baris_riwayat(page: Page) -> None:
     expect(page.get_by_text("Sudah diperpanjang").first).to_be_visible()
     page.get_by_role("button", name="Catat perpanjangan").click()
     expect(page.get_by_role("dialog").get_by_text("Kontrak yang diperpanjang: Kontrak 2027")).to_be_visible()
+    page.wait_for_timeout(500)
     page.keyboard.press("Escape")
     page.get_by_role("tab", name="Riwayat perubahan").click()
     expect(page.locator("tbody tr")).to_have_count(7)

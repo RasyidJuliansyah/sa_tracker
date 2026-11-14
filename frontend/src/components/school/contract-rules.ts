@@ -48,7 +48,7 @@ export function validateRenewal(input: RenewalInput, base: MockContract, schoolC
   return errors
 }
 
-export const hasErrors = (e: Record<string, string>) => Object.values(e).some(Boolean)
+export const hasErrors = (e: object) => Object.values(e).some(Boolean)
 
 /** Retention satu kontrak (tampilan): nilai perpanjangan ÷ nilai kontrak, dalam persen, tidak dibatasi 100. */
 export function renewalRatio(renewalValue: number, baseValue: number): number {

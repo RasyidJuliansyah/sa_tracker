@@ -37,7 +37,7 @@ const DATE = /^\d{4}-\d{2}-\d{2}$/
 export function previewImport(text: string, existingNpsn: Set<string>): { rows: ImportRow[]; fileError: string } {
   const table = parseCsv(text)
   if (table.length < 2) return { rows: [], fileError: 'File kosong atau tidak berisi baris data.' }
-  const header = table[0].map((h) => h.trim().toLowerCase())
+  const header = table[0]!.map((h) => h.trim().toLowerCase())
   const missing = (['npsn', 'nama_sekolah', 'jenjang', 'paket'] as const).filter((h) => !header.includes(h))
   if (missing.length) return { rows: [], fileError: `Kolom wajib tidak ada: ${missing.join(', ')}. Unduh template untuk format yang benar.` }
   const col = (r: string[], name: string) => (r[header.indexOf(name)] ?? '').trim()

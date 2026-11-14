@@ -25,7 +25,7 @@ const error = computed(() => (submitted.value && parsed.value === null ? 'Persen
 
 async function load() {
   years.value = await listTargets()
-  if (!year.value && years.value.length) year.value = String(years.value[0].year)
+  if (!year.value && years.value.length) year.value = String(years.value[0]?.year)
 }
 onMounted(load)
 watch(year, (y) => {

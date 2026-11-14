@@ -147,8 +147,8 @@ export async function assignSchool(schoolId: number, agentId: number): Promise<v
   const agent = agents.find((a) => a.id === agentId)
   if (!school || !agent) throw new Error('Data tidak ditemukan')
   const current = assignments.filter((a) => a.schoolId === schoolId && !a.unassignedAt)
-  const before = current.length ? agentName(current[0].agentId) : null
-  if (current.length && current[0].agentId === agentId) return
+  const before = current[0] ? agentName(current[0].agentId) : null
+  if (current.length && current[0]?.agentId === agentId) return
   if (current.length >= MAX_AGENTS_PER_SCHOOL) {
     assignments = assignments.map((a) => (a.schoolId === schoolId && !a.unassignedAt ? { ...a, unassignedAt: MOCK_TODAY } : a))
   }
