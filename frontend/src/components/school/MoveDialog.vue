@@ -78,8 +78,8 @@ function submit() {
 </template>
 
 <style scoped>
-.move { display: flex; flex-direction: column; gap: 20px; }
-.move__from { display: flex; align-items: center; gap: 12px; padding: 16px; border-radius: 8px; background: rgb(var(--v-theme-background)); }
+.move { display: flex; flex-direction: column; gap: 18px; }
+.move__from { display: flex; align-items: center; gap: 12px; padding: 14px 16px; border-radius: 8px; background: rgb(var(--v-theme-background)); }
 .move__avatar {
   display: inline-flex; align-items: center; justify-content: center; flex: none; width: 32px; height: 32px; border-radius: 999px;
   background: rgb(var(--v-theme-brand-soft)); color: rgb(var(--v-theme-secondary)); font-size: 12px; font-weight: 600;
