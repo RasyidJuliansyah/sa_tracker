@@ -73,11 +73,11 @@ const head: MockAuditEntry[] = [
   { id: 311, at: '2026-11-14T09:15:00+07:00', actor: 'Dimas Saputra', actorRole: 'Agent', action: 'CHECK_IN', dataType: 'Kunjungan', dataLabel: 'Kunjungan #2493', tableName: 'visits', recordIds: '#2493', changes: [] },
   { id: 310, at: '2026-11-14T08:52:00+07:00', actor: 'Dimas Saputra', actorRole: 'Agent', action: 'LOGIN', dataType: 'Sesi', dataLabel: 'Sesi', tableName: 'sessions', recordIds: '', changes: [] },
   { id: 309, at: '2026-11-14T08:05:00+07:00', actor: 'Rina Nurhayati', actorRole: 'Manager', action: 'EXPORT', dataType: 'Rekap kunjungan', dataLabel: 'Rekap kunjungan', tableName: 'visits', recordIds: '', changes: [] },
-  { id: 308, at: '2026-11-13T15:30:00+07:00', actor: 'Rina Nurhayati', actorRole: 'Manager', action: 'MOVE', dataType: 'Penugasan', dataLabel: 'Penugasan • SMP Gemilang Bogor', tableName: 'school_assignments', recordIds: '#88, #131', changes: move },
-  { id: 307, at: '2026-11-13T11:02:00+07:00', actor: 'Fajar Hidayat', actorRole: 'Admin', action: 'CREATE', dataType: 'Akun', dataLabel: 'Akun • Sinta Maharani', tableName: 'users', recordIds: '#3', changes: [] },
-  { id: 306, at: '2026-11-12T16:20:00+07:00', actor: 'Rina Nurhayati', actorRole: 'Manager', action: 'UPDATE', dataType: 'Kontrak', dataLabel: 'Kontrak • SMA Bina Insani Bekasi', tableName: 'school_contracts', recordIds: '#41', changes: [] },
-  { id: 305, at: '2026-11-10T09:00:00+07:00', actor: 'Fajar Hidayat', actorRole: 'Admin', action: 'IMPORT', dataType: 'Sekolah', dataLabel: 'Sekolah • 45 baris', tableName: 'schools', recordIds: '', changes: [] },
-  { id: 304, at: '2026-11-09T14:11:00+07:00', actor: 'Fajar Hidayat', actorRole: 'Admin', action: 'DEACTIVATE', dataType: 'Akun', dataLabel: 'Akun • Bagus Pratama', tableName: 'users', recordIds: '#7', changes: [] },
+  { id: 308, at: '2026-11-13T15:30:00+07:00', actor: 'Rina Nurhayati', actorRole: 'Manager', action: 'MOVE', dataType: 'Penugasan', dataLabel: 'Penugasan · SMP Gemilang Bogor', tableName: 'school_assignments', recordIds: '#88, #131', changes: move },
+  { id: 307, at: '2026-11-13T11:02:00+07:00', actor: 'Fajar Hidayat', actorRole: 'Admin', action: 'CREATE', dataType: 'Akun', dataLabel: 'Akun · Sinta Maharani', tableName: 'users', recordIds: '#3', changes: [] },
+  { id: 306, at: '2026-11-12T16:20:00+07:00', actor: 'Rina Nurhayati', actorRole: 'Manager', action: 'UPDATE', dataType: 'Kontrak', dataLabel: 'Kontrak · SMA Bina Insani Bekasi', tableName: 'school_contracts', recordIds: '#41', changes: [] },
+  { id: 305, at: '2026-11-10T09:00:00+07:00', actor: 'Fajar Hidayat', actorRole: 'Admin', action: 'IMPORT', dataType: 'Sekolah', dataLabel: 'Sekolah · 45 baris', tableName: 'schools', recordIds: '', changes: [] },
+  { id: 304, at: '2026-11-09T14:11:00+07:00', actor: 'Fajar Hidayat', actorRole: 'Admin', action: 'DEACTIVATE', dataType: 'Akun', dataLabel: 'Akun · Bagus Pratama', tableName: 'users', recordIds: '#7', changes: [] },
   { id: 303, at: '2026-11-08T10:30:00+07:00', actor: 'Ayu Lestari', actorRole: 'Agent', action: 'CHECK_OUT', dataType: 'Kunjungan', dataLabel: 'Kunjungan #2488', tableName: 'visits', recordIds: '#2488', changes: [] },
 ]
 
@@ -92,7 +92,8 @@ const tail: MockAuditEntry[] = Array.from({ length: 302 }, (_, i) => {
   const id = 302 - i
   const [actor, actorRole] = actors[i % actors.length]!
   const [action, dataType, label, tableName] = kinds[i % kinds.length]!
-  const date = new Date(Date.UTC(2026, 10, 14 - Math.floor(i / 45), 1 + (i % 8), (i * 7) % 60))
+  // Mundur 1 menit per baris dari 8 Nov 09.59 WIB, jadi urutan waktu tetap menurun dan semua di rentang 8–14 Nov.
+  const date = new Date(Date.UTC(2026, 10, 8, 2, 59) - i * 60_000)
   return {
     id, at: date.toISOString(), actor, actorRole, action, dataType,
     dataLabel: dataType === 'Sesi' ? 'Sesi' : `${label} #${2400 + (i % 80)}`, tableName, recordIds: `#${2400 + (i % 80)}`, changes: [],

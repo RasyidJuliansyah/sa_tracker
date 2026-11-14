@@ -5,8 +5,18 @@ URL = "/akun?as=admin"
 
 
 def pilih(page: Page, nama_field: str, opsi: str) -> None:
-    page.get_by_role("combobox", name=nama_field).click(force=True)
-    page.get_by_role("option", name=opsi, exact=True).click()
+    combo = page.get_by_role("combobox", name=nama_field)
+    option = page.get_by_role("option", name=opsi, exact=True)
+    for _ in range(3):  # klik pertama kadang hanya menutup menu sebelumnya
+        page.evaluate("window.scrollTo(0, 0)")  # filter tidak boleh tertutup app bar
+        combo.click(force=True)
+        try:
+            option.wait_for(state="visible", timeout=1500)
+            break
+        except Exception:
+            continue
+    option.click()
+    expect(page.get_by_role("listbox")).to_have_count(0)
 
 
 def test_tabel_menampilkan_tujuh_akun(page: Page) -> None:

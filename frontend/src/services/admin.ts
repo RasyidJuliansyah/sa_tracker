@@ -104,7 +104,7 @@ export async function listAudit(filter: AuditFilter): Promise<MockAuditEntry[]> 
   const to = filter.to ? new Date(filter.to) : null
   if (from) from.setHours(0, 0, 0, 0)
   if (to) to.setHours(23, 59, 59, 999)
-  return [...audit].sort((a, b) => b.at.localeCompare(a.at)).filter((e) => {
+  return [...audit].sort((a, b) => b.id - a.id).filter((e) => {
     const at = new Date(e.at)
     return (
       (!filter.dataType || e.dataType === filter.dataType) &&
