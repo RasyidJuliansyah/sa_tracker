@@ -33,10 +33,10 @@ export async function listUsers(actor: AuthUser, f: { query?: string; role?: Rol
   return users.map(toAccount)
 }
 
-export async function createUser(actor: AuthUser, input: { name: string; email: string; role: Role; timezone: Tz }, ctx: Ctx) {
+export async function createUser(actor: AuthUser, input: { name: string; email: string; role: Role; timezone: Tz; password?: string }, ctx: Ctx) {
   const email = input.email.trim().toLowerCase()
   if (await prisma.user.findUnique({ where: { email } })) throw new AppError('CONFLICT', 'Email sudah terdaftar.')
-  const tempPassword = generateTempPassword()
+  const tempPassword = input.password ?? generateTempPassword()
   const passwordHash = await bcrypt.hash(tempPassword, 10)
   const user = await withAudit(async (tx) => {
     const u = await tx.user.create({ data: { name: input.name.trim(), email, role: input.role, timezone: input.timezone, passwordHash, mustChangePassword: true, createdById: actor.id }, select })
@@ -67,10 +67,10 @@ export async function updateUser(actor: AuthUser, id: number, input: { name?: st
 }
 
 /** Reset password oleh admin: password sementara baru, ditampilkan sekali. */
-export async function resetPassword(actor: AuthUser, id: number, ctx: Ctx) {
+export async function resetPassword(actor: AuthUser, id: number, ctx: Ctx, password?: string) {
   const target = await prisma.user.findUnique({ where: { id }, select })
   if (!target) throw new AppError('NOT_FOUND', 'Akun tidak ditemukan.')
-  const tempPassword = generateTempPassword()
+  const tempPassword = password ?? generateTempPassword()
   const passwordHash = await bcrypt.hash(tempPassword, 10)
   await withAudit(async (tx) => {
     await tx.user.update({ where: { id }, data: { passwordHash, mustChangePassword: true } })

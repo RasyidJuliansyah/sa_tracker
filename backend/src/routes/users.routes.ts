@@ -2,10 +2,11 @@ import { Router, type Request } from 'express'
 import { z } from 'zod'
 import { authenticate, requireRole } from '../middleware/auth.js'
 import { createUser, listUsers, resetPassword, updateUser } from '../services/users.service.js'
-import { idParam, roleEnum, timezoneEnum } from '../validators/common.js'
+import { idParam, roleEnum, tempPassword, timezoneEnum } from '../validators/common.js'
 
 const ctx = (req: Request) => ({ ip: req.ip, userAgent: req.headers['user-agent'] })
-const createBody = z.object({ name: z.string().trim().min(1).max(120), email: z.string().trim().email().max(191), role: roleEnum, timezone: timezoneEnum })
+const createBody = z.object({ name: z.string().trim().min(1).max(120), email: z.string().trim().email().max(191), role: roleEnum, timezone: timezoneEnum, password: tempPassword.optional() })
+const resetBody = z.object({ password: tempPassword.optional() })
 const updateBody = z.object({
   name: z.string().trim().min(1).max(120).optional(), email: z.string().trim().email().max(191).optional(),
   role: roleEnum.optional(), timezone: timezoneEnum.optional(), isActive: z.boolean().optional(),
@@ -25,5 +26,5 @@ usersRouter.patch('/users/:id', requireRole('ADMIN', 'MANAGER'), async (req, res
   try { res.json({ account: await updateUser(req.user!, idParam.parse(req.params).id, updateBody.parse(req.body), ctx(req)) }) } catch (e) { next(e) }
 })
 usersRouter.post('/users/:id/reset-password', requireRole('ADMIN'), async (req, res, next) => {
-  try { res.json(await resetPassword(req.user!, idParam.parse(req.params).id, ctx(req))) } catch (e) { next(e) }
+  try { res.json(await resetPassword(req.user!, idParam.parse(req.params).id, ctx(req), resetBody.parse(req.body ?? {}).password)) } catch (e) { next(e) }
 })

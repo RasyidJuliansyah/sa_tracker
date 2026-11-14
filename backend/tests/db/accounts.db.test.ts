@@ -47,6 +47,12 @@ describe.skipIf(!ok)('akun, master data, audit (database uji)', () => {
     expect(JSON.stringify(log!.changes)).not.toContain(b.tempPassword)
     expect((await call('admin', '/api/users', 'POST', { name: 'X', email: em('baru'), role: 'AGENT', timezone: 'WIB' })).status).toBe(409)
   })
+  it('password sementara dari klien dipakai; yang terlalu pendek ditolak', async () => {
+    const r = await call('admin', '/api/users', 'POST', { name: 'P', email: em('pw'), role: 'AGENT', timezone: 'WIB', password: 'Abc#12xy' })
+    expect(r.status).toBe(201)
+    expect((await r.json()).tempPassword).toBe('Abc#12xy')
+    expect((await call('admin', '/api/users', 'POST', { name: 'P', email: em('pw2'), role: 'AGENT', timezone: 'WIB', password: 'pendek' })).status).toBe(400)
+  })
   it('manager dan agent tidak boleh membuat akun; agent tidak boleh melihat daftar', async () => {
     const body = { name: 'X', email: em('x'), role: 'AGENT', timezone: 'WIB' }
     expect((await call('manager', '/api/users', 'POST', body)).status).toBe(403)
