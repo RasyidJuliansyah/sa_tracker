@@ -30,7 +30,7 @@ function summary(s: SchoolFull, today: string) {
   return {
     id: s.id, npsn: s.npsn, name: s.name, lmsSchoolId: s.lmsSchoolId, city: s.city, timezone: s.timezone,
     jenjang: { id: s.jenjang.id, name: s.jenjang.name }, package: { id: s.package.id, name: s.package.name },
-    agent: a ? { id: a.agent.id, name: a.agent.name, sharePercent: Number(a.sharePercent) } : null,
+    agent: a ? { id: a.agent.id, name: a.agent.name, sharePercent: Number(a.sharePercent), assignmentId: a.id, assignedAt: dk(a.assignedAt)! } : null,
     contract: cur ? contractDto(cur.raw) : null,
     status: renewalStatus(lite, today),
   }

@@ -7,7 +7,7 @@ import EmptyState from '@/components/EmptyState.vue'
 import LabeledField from '@/components/LabeledField.vue'
 import StatusChip from '@/components/StatusChip.vue'
 import { formatPeriod, listStatusLabel } from '@/components/school/school-format'
-import { LEVELS, PACKAGES } from '@/mocks/school'
+import { useReferenceStore } from '@/stores/reference'
 import { listAgents, listSchools, type SchoolRow } from '@/services/school'
 import { formatRupiah } from '@/utils/format'
 
@@ -32,8 +32,9 @@ const agent = ref<string | null>(null)
 const page = ref(1)
 const perPage = ref(10)
 
-const levelItems = [{ title: 'Semua', value: null }, ...LEVELS.map((v) => ({ title: v, value: v }))]
-const pkgItems = [{ title: 'Semua', value: null }, ...PACKAGES.map((v) => ({ title: v, value: v }))]
+const reference = useReferenceStore()
+const levelItems = computed(() => [{ title: 'Semua', value: null }, ...reference.levels.map((v) => ({ title: v.name, value: v.name }))])
+const pkgItems = computed(() => [{ title: 'Semua', value: null }, ...reference.packages.map((v) => ({ title: v.name, value: v.name }))])
 const statusItems = [
   { title: 'Semua', value: null }, { title: 'Berjalan', value: 'RUNNING' }, { title: 'Segera berakhir', value: 'ENDING_SOON' },
   { title: 'Berakhir, belum diperpanjang', value: 'EXPIRED' }, { title: 'Sudah diperpanjang', value: 'RENEWED' },

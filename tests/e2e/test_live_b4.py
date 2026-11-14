@@ -68,3 +68,30 @@ def test_agent_dialihkan_ke_beranda_agent(page: Page) -> None:
     expect(page).to_have_url(re.compile(r"/agent$"))
     page.goto("/audit-log")
     expect(page).to_have_url(re.compile(r"/agent$"))
+
+
+# ---- B5/B6: sekolah, penugasan, target (data seed: Sekolah A dan B) ----
+def test_manager_daftar_dan_halaman_sekolah(page: Page) -> None:
+    login(page, "manager@skolla.test")
+    page.goto("/sekolah")
+    expect(page.get_by_text("SMA Sekolah A")).to_be_visible()
+    expect(page.get_by_text("SMP Sekolah B")).to_be_visible()
+    page.get_by_text("SMA Sekolah A").click()
+    expect(page).to_have_url(re.compile(r"/sekolah/\d+$"))
+    expect(page.get_by_text("10000001").first).to_be_visible()
+
+
+def test_manager_penugasan_dan_target(page: Page) -> None:
+    login(page, "manager@skolla.test")
+    page.goto("/penugasan")
+    expect(page.get_by_text("Citra Agent").first).to_be_visible()
+    page.goto("/target-retention")
+    expect(page.get_by_test_id("target-row").first).to_be_visible()
+
+
+def test_agent_tidak_melihat_sekolah_lain_lewat_api(page: Page) -> None:
+    login(page, "citra@skolla.test")
+    # Sekolah A (id 1) milik Citra; Sekolah B (id 2) milik agent lain.
+    api = os.environ.get("LIVE_API", "http://localhost:3013/api")
+    assert page.request.get(f"{api}/schools/1").status == 200
+    assert page.request.get(f"{api}/schools/2").status == 404

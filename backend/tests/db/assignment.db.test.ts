@@ -63,6 +63,7 @@ describe.skipIf(!ok)('penugasan dan target retention (database uji)', () => {
     const r = await (await call('manager', '/api/assignments')).json()
     expect(r.agents.some((a: { id: number; schools: unknown[] }) => a.id === ids.agent2 && a.schools.length >= 1)).toBe(true)
     expect(Array.isArray(r.unassigned)).toBe(true)
+    expect(typeof r.agents[0].retention).toBe('number')
   })
   it('target retention: default 65 lalu disimpan; contoh sekolah A dan B (kohort 2090) = 90%, tercapai', async () => {
     const mk = async (n: number, value: number, renewValue: number) => {

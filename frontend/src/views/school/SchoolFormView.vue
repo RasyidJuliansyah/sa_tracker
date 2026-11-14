@@ -7,7 +7,8 @@ import DateField from '@/components/school/DateField.vue'
 import SchoolCard from '@/components/school/SchoolCard.vue'
 import { formatDigits, parseDigits } from '@/components/school/school-format'
 import { validateSchoolForm } from '@/components/school/school-form-rules'
-import { LEVELS, PACKAGES, type Level, type Pkg } from '@/mocks/school'
+import type { Level, Pkg } from '@/mocks/school'
+import { useReferenceStore } from '@/stores/reference'
 import { createSchool, listAgents, npsnOwner } from '@/services/school'
 import type { IndoTimezone } from '@/utils/timezone'
 
@@ -36,8 +37,9 @@ const agentId = ref<string | null>(null)
 const submitted = ref(false)
 const saving = ref(false)
 
-const levelItems = LEVELS.map((v) => ({ title: v, value: v }))
-const pkgItems = PACKAGES.map((v) => ({ title: v, value: v }))
+const reference = useReferenceStore()
+const levelItems = computed(() => reference.levels.map((v) => ({ title: v.name, value: v.name })))
+const pkgItems = computed(() => reference.packages.map((v) => ({ title: v.name, value: v.name })))
 const zoneItems = ['WIB', 'WITA', 'WIT'].map((z) => ({ title: z, value: z }))
 const agentItems = [{ title: 'Belum ditugaskan', value: null }, ...listAgents().map((a) => ({ title: `${a.name} (${a.timezone})`, value: String(a.id) }))]
 
@@ -58,6 +60,7 @@ async function save() {
     return
   }
   saving.value = true
+  try {
   const created = await createSchool({
     name: name.value, npsn: npsn.value, lmsSchoolId: lmsId.value.trim() ? Number(lmsId.value) : null, city: city.value,
     level: level.value as Level, pkg: pkg.value as Pkg, timezone: timezone.value as IndoTimezone, pic: pic.value, picContact: picContact.value,
@@ -66,6 +69,9 @@ async function save() {
     agentId: agentId.value ? Number(agentId.value) : null,
   })
   router.push(`/sekolah/${created.id}`)
+  } finally {
+    saving.value = false
+  }
 }
 </script>
 

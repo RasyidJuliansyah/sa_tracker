@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { pinia } from '@/plugins/pinia'
+import { useReferenceStore } from '@/stores/reference'
 import { homeFor, MOCK_AUTH, useSessionStore, type Role } from '@/stores/session'
 import { adminRoutes } from './routes/admin'
 import { agentRoutes } from './routes/agent'
@@ -40,6 +41,7 @@ router.beforeEach(async (to) => {
   if (to.name === 'login') return session.user ? homeFor(session.user.role) : true
   if (to.name === 'komponen') return true
   if (!session.user) return { name: 'login' }
+  if (session.user.role !== 'AGENT') await useReferenceStore(pinia).load()
   if (to.path === '/') return homeFor(session.user.role)
   if (!allowedRoles(to.path).includes(session.user.role)) return homeFor(session.user.role)
   return true

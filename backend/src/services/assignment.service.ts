@@ -3,7 +3,10 @@ import { prisma } from '../db.js'
 import type { AuthUser } from '../middleware/auth.js'
 import { AppError } from '../utils/errors.js'
 import { withAudit } from './audit.js'
+import { DEFAULT_TARGET_PERCENT, retentionForAgent } from './retention.js'
 import { listSchools } from './school.service.js'
+import { loadContractRows } from './target.service.js'
+import { dateKeyIn } from '../utils/timezone.js'
 
 type Ctx = { ip?: string; userAgent?: string }
 
@@ -11,8 +14,18 @@ type Ctx = { ip?: string; userAgent?: string }
 export async function listAssignments(actor: AuthUser) {
   const agents = await prisma.user.findMany({ where: { role: 'AGENT', isActive: true }, select: { id: true, name: true, timezone: true }, orderBy: { name: 'asc' } })
   const { items } = await listSchools(actor, { page: 1, pageSize: 200 })
+  const today = dateKeyIn(new Date())
+  const year = Number(today.slice(0, 4))
+  const [contracts, active, target] = await Promise.all([
+    loadContractRows(),
+    prisma.schoolAssignment.findMany({ where: { unassignedAt: null }, select: { schoolId: true, agentId: true, sharePercent: true } }),
+    prisma.retentionTarget.findUnique({ where: { year } }),
+  ])
+  const assignments = active.map((a) => ({ schoolId: a.schoolId, agentId: a.agentId, sharePercent: Number(a.sharePercent) }))
+  const targetPercent = target ? Number(target.targetPercent) : DEFAULT_TARGET_PERCENT
   return {
-    agents: agents.map((a) => ({ ...a, schools: items.filter((s) => s.agent?.id === a.id) })),
+    year,
+    agents: agents.map((a) => ({ ...a, retention: retentionForAgent(contracts, assignments, a.id, year, today, targetPercent).percent ?? 0, schools: items.filter((s) => s.agent?.id === a.id) })),
     unassigned: items.filter((s) => !s.agent),
   }
 }
