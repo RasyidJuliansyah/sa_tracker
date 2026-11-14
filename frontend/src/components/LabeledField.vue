@@ -1,6 +1,7 @@
 <script setup lang="ts">
 // Field teks dengan label di atas (docs/design-system/skolla-lms/components/Input.md).
 // Label 13px bobot 500, jarak 6px ke field. Pesan galat di bawah field memakai warna error-text.
+defineOptions({ inheritAttrs: false })
 defineProps<{
   label: string
   id: string

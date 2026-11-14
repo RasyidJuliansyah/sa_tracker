@@ -20,7 +20,7 @@ export const useSessionStore = defineStore('session', () => {
 
   function setMock(r: Role) {
     role.value = r
-    name.value = { ADMIN: 'Admin Skolla', MANAGER: 'Rina Nurhayati', AGENT: 'Dimas Saputra' }[r]
+    name.value = { ADMIN: 'Fajar Hidayat', MANAGER: 'Rina Nurhayati', AGENT: 'Dimas Saputra' }[r]
   }
   return { role, name, roleLabel, initials, setMock }
 })

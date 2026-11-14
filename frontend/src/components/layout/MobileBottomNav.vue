@@ -1,5 +1,9 @@
 <script setup lang="ts">
-import { agentNav } from '@/utils/navigation'
+import { useRoute } from 'vue-router'
+import { agentNav, type NavItem } from '@/utils/navigation'
+
+const route = useRoute()
+const active = (item: NavItem, isActive: boolean) => isActive || (item.alsoActiveFor ?? []).some((p) => route.path.startsWith(p))
 
 // Navigasi bawah HP (Figma: HP/Nav bawah). Tinggi 64px, item aktif brand-strong bobot 600.
 </script>
@@ -7,7 +11,7 @@ import { agentNav } from '@/utils/navigation'
 <template>
   <nav class="bottom-nav" aria-label="Navigasi utama">
     <router-link v-for="item in agentNav" :key="item.to" v-slot="{ href, navigate, isActive }" :to="item.to" custom>
-      <a :href="href" class="bottom-nav__item" :class="{ 'bottom-nav__item--active': isActive }" :aria-current="isActive ? 'page' : undefined" @click="navigate">
+      <a :href="href" class="bottom-nav__item" :class="{ 'bottom-nav__item--active': active(item, isActive) }" :aria-current="active(item, isActive) ? 'page' : undefined" @click="navigate">
         <v-icon :icon="item.icon" size="24" />
         <span>{{ item.label }}</span>
       </a>
