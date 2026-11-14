@@ -1,26 +1,46 @@
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
+import { api, ApiError } from '@/services/http'
 
 export type Role = 'ADMIN' | 'MANAGER' | 'AGENT'
+export interface SessionUser { id: number; name: string; email: string; role: Role; timezone: 'WIB' | 'WITA' | 'WIT'; mustChangePassword: boolean }
 
-// Sesi sementara dengan data tiruan. Diganti auth store sungguhan di langkah login (backend).
+/** Mode tiruan untuk tes UI: hanya saat dev dan VITE_MOCK_AUTH=1. Hapus setelah semua layar memakai API. */
+export const MOCK_AUTH = import.meta.env.DEV && import.meta.env.VITE_MOCK_AUTH === '1'
+const MOCK_NAMES: Record<Role, string> = { ADMIN: 'Fajar Hidayat', MANAGER: 'Rina Nurhayati', AGENT: 'Dimas Saputra' }
+
+export const homeFor = (role: Role) => ({ ADMIN: '/akun', MANAGER: '/dashboard', AGENT: '/agent' })[role]
+
 export const useSessionStore = defineStore('session', () => {
-  const role = ref<Role>('MANAGER')
-  const name = ref('Rina Nurhayati')
+  const user = ref<SessionUser | null>(null)
+  const loaded = ref(false)
 
+  const role = computed<Role>(() => user.value?.role ?? 'MANAGER')
+  const name = computed(() => user.value?.name ?? '')
   const roleLabel = computed(() => ({ ADMIN: 'Admin', MANAGER: 'Manager', AGENT: 'Agent' })[role.value])
-  const initials = computed(() =>
-    name.value
-      .split(' ')
-      .slice(0, 2)
-      .map((w) => w[0])
-      .join('')
-      .toUpperCase(),
-  )
+  const initials = computed(() => name.value.split(' ').slice(0, 2).map((w) => w[0]).join('').toUpperCase())
 
-  function setMock(r: Role) {
-    role.value = r
-    name.value = { ADMIN: 'Fajar Hidayat', MANAGER: 'Rina Nurhayati', AGENT: 'Dimas Saputra' }[r]
+  async function load() {
+    if (loaded.value) return
+    try {
+      user.value = (await api<{ user: SessionUser }>('/me')).user
+    } catch (e) {
+      if (!(e instanceof ApiError) || e.status !== 401) throw e
+      user.value = null
+    }
+    loaded.value = true
   }
-  return { role, name, roleLabel, initials, setMock }
+  async function login(email: string, password: string) {
+    user.value = (await api<{ user: SessionUser }>('/auth/login', { method: 'POST', body: { email, password } })).user
+    loaded.value = true
+  }
+  async function logout() {
+    await api('/auth/logout', { method: 'POST' })
+    user.value = null
+  }
+  function setMock(r: Role) {
+    user.value = { id: 0, name: MOCK_NAMES[r], email: `${r.toLowerCase()}@mock.local`, role: r, timezone: 'WIB', mustChangePassword: false }
+    loaded.value = true
+  }
+  return { user, loaded, role, name, roleLabel, initials, load, login, logout, setMock }
 })

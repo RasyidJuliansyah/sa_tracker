@@ -1,5 +1,8 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
+import { useRouter } from 'vue-router'
+import { ApiError } from '@/services/http'
+import { homeFor, useSessionStore } from '@/stores/session'
 import LabeledField from '@/components/LabeledField.vue'
 import logoIkon from '@/assets/brand/logo-ikon.svg'
 import logoPutih from '@/assets/login/logo-skolla-putih.png'
@@ -12,6 +15,8 @@ const highlights = [
   { icon: 'mdi-target', text: 'Pantau retention dan target tahunan' },
 ]
 
+const router = useRouter()
+const session = useSessionStore()
 const email = ref('')
 const password = ref('')
 const showPassword = ref(false)
@@ -19,14 +24,6 @@ const loading = ref(false)
 const formError = ref('')
 const passwordError = ref('')
 const emailError = ref('')
-
-// Pratinjau state galat selama login belum tersambung ke backend. Hapus di langkah 4.
-if (import.meta.env.DEV && new URLSearchParams(location.search).get('preview') === 'galat') {
-  email.value = 'dimas.saputra@skolla.id'
-  password.value = '••••••'
-  formError.value = 'Email atau password salah, atau akun sudah dinonaktifkan. Hubungi admin jika perlu bantuan.'
-  passwordError.value = 'Periksa kembali password Anda'
-}
 
 const passwordType = computed(() => (showPassword.value ? 'text' : 'password'))
 
@@ -44,7 +41,15 @@ async function onSubmit() {
   if (!validate()) return
   loading.value = true
   try {
-    // TODO langkah 4: panggil POST /api/auth/login lewat auth store.
+    await session.login(email.value.trim(), password.value)
+    await router.replace(homeFor(session.role))
+  } catch (e) {
+    if (e instanceof ApiError && e.status === 401) {
+      formError.value = 'Email atau password salah, atau akun sudah dinonaktifkan. Hubungi admin jika perlu bantuan.'
+      passwordError.value = 'Periksa kembali password Anda'
+    } else {
+      formError.value = e instanceof ApiError ? e.message : 'Terjadi kesalahan. Coba lagi.'
+    }
   } finally {
     loading.value = false
   }

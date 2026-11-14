@@ -1,7 +1,7 @@
 """Halaman login mengikuti desain Figma (SA → 01 Umum → Login).
 
-Butuh frontend berjalan di http://localhost:3010. Login ke backend belum tersambung (langkah 4),
-jadi tes ini hanya memeriksa tampilan dan validasi sisi klien.
+Butuh frontend berjalan di http://localhost:3010. Frontend dijalankan dengan `npm run dev:mock`. Tes ini hanya memeriksa tampilan dan
+validasi sisi klien; login ke backend dites di backend/tests/db/auth.db.test.ts.
 """
 from playwright.sync_api import Page, expect
 

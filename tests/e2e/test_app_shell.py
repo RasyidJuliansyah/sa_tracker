@@ -1,7 +1,9 @@
 """Rangka halaman per peran (Figma: Sidebar/Manager, Sidebar/Admin, App bar, HP/Top bar, HP/Nav bawah).
 
-Peran dipilih lewat ?as=... yang hanya aktif saat dev, sampai login sungguhan ada.
+Peran dipilih lewat ?as=... yang hanya aktif saat dev, dan hanya jika frontend dijalankan dengan `npm run dev:mock` (VITE_MOCK_AUTH=1).
 """
+import re
+
 from playwright.sync_api import Page, expect
 
 
@@ -42,4 +44,4 @@ def test_agent_memakai_layout_hp_dengan_navigasi_bawah(page: Page) -> None:
         expect(nav.get_by_text(label)).to_be_visible()
     assert page.locator(".mobile-bar").bounding_box()["height"] == 56
     page.get_by_role("link", name="Riwayat").click()
-    expect(page).to_have_url("http://localhost:3010/agent/riwayat")
+    expect(page).to_have_url(re.compile(r"/agent/riwayat$"))

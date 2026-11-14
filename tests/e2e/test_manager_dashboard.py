@@ -1,4 +1,6 @@
 """Dashboard manager (Figma: Manager – Dashboard). Data tiruan, hari ini = Sabtu 14 Nov 2026."""
+import re
+
 from playwright.sync_api import Page, expect
 
 
@@ -93,4 +95,4 @@ def test_tabel_kunjungan_jam_di_zona_agent_dan_pagination(page: Page) -> None:
     footer = page.locator(".vis .table-footer")
     expect(footer).to_contain_text("1–10 dari")
     page.get_by_role("link", name="Buka rekap kunjungan").click()
-    expect(page).to_have_url("http://localhost:3010/rekap")
+    expect(page).to_have_url(re.compile(r"/rekap$"))

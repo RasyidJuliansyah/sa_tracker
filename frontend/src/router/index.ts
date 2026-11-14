@@ -1,6 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { pinia } from '@/plugins/pinia'
-import { useSessionStore, type Role } from '@/stores/session'
+import { homeFor, MOCK_AUTH, useSessionStore, type Role } from '@/stores/session'
 import { adminRoutes } from './routes/admin'
 import { agentRoutes } from './routes/agent'
 import { managerRoutes } from './routes/shared'
@@ -10,7 +10,6 @@ export const router = createRouter({
   history: createWebHistory(),
   routes: [
     { path: '/login', name: 'login', component: () => import('@/views/LoginView.vue') },
-    { path: '/', redirect: '/dashboard' },
     {
       path: '/',
       component: () => import('@/views/shared/RoleLayout.vue'),
@@ -22,11 +21,26 @@ export const router = createRouter({
   ],
 })
 
-// Hanya saat dev: ?as=admin|manager|agent mengganti peran sementara untuk melihat rangka tiap peran.
-// Hapus di langkah login (backend), diganti guard berdasarkan sesi sungguhan.
-if (import.meta.env.DEV) {
-  router.beforeEach((to) => {
-    const as = typeof to.query.as === 'string' ? (to.query.as.toUpperCase() as Role) : null
-    if (as && ['ADMIN', 'MANAGER', 'AGENT'].includes(as)) useSessionStore(pinia).setMock(as)
-  })
+// Peran yang boleh membuka tiap bagian. Backend tetap pengaman utama; ini hanya pengalihan.
+function allowedRoles(path: string): Role[] {
+  if (path.startsWith('/agent')) return ['AGENT']
+  if (path === '/akun' || path === '/master-data') return ['ADMIN']
+  return ['ADMIN', 'MANAGER']
 }
+
+router.beforeEach(async (to) => {
+  const session = useSessionStore(pinia)
+  if (MOCK_AUTH) {
+    const as = typeof to.query.as === 'string' ? (to.query.as.toUpperCase() as Role) : null
+    if (as && ['ADMIN', 'MANAGER', 'AGENT'].includes(as)) session.setMock(as)
+    else if (!session.loaded && to.name !== 'login') session.setMock('MANAGER')
+    else if (!session.loaded) session.loaded = true // halaman login tanpa sesi
+  }
+  await session.load()
+  if (to.name === 'login') return session.user ? homeFor(session.user.role) : true
+  if (to.name === 'komponen') return true
+  if (!session.user) return { name: 'login' }
+  if (to.path === '/') return homeFor(session.user.role)
+  if (!allowedRoles(to.path).includes(session.user.role)) return homeFor(session.user.role)
+  return true
+})
