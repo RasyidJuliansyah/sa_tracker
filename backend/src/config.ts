@@ -12,4 +12,7 @@ export const config = {
   cookieName: 'sa_session',
   sessionHours: 8,
   secureCookie: isProd,
+  // Foto kunjungan: di luar folder publik, tidak di-commit. Di Docker berupa volume.
+  photoDir: process.env.PHOTO_STORAGE_DIR ?? './storage/photos',
+  maxPhotoBytes: 8 * 1024 * 1024,
 }

@@ -1,5 +1,6 @@
 import 'dotenv/config'
 import bcrypt from 'bcrypt'
+import { randomInt } from 'node:crypto'
 import type { AddressInfo } from 'node:net'
 import type { Server } from 'node:http'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
@@ -17,7 +18,8 @@ describe.skipIf(!ok)('penugasan dan target retention (database uji)', () => {
   const cookies: Record<string, string> = {}
   const ids: Record<string, number> = {}
   let jenjangId = 0, packageId = 0
-  const npsn = (n: number) => String(10000000 + (stamp % 80000000) + n + 5000)
+  const used = new Map<number, string>()
+  const npsn = (n: number) => { if (!used.has(n)) used.set(n, String(randomInt(10000000, 99999999))); return used.get(n)! }
 
   const call = (who: string | null, path: string, method = 'GET', body?: unknown) =>
     fetch(url + path, { method, headers: { 'content-type': 'application/json', origin: 'http://localhost:3010', ...(who ? { cookie: cookies[who]! } : {}) }, body: body ? JSON.stringify(body) : undefined })

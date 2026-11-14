@@ -1,4 +1,5 @@
 import type { ErrorRequestHandler, RequestHandler } from 'express'
+import multer from 'multer'
 import { ZodError } from 'zod'
 import { AppError } from '../utils/errors.js'
 import { log } from '../utils/logger.js'
@@ -12,6 +13,11 @@ export const errorHandler: ErrorRequestHandler = (err, req, res, _next) => {
   if (err instanceof ZodError) {
     const details = err.issues.map((i) => ({ field: i.path.join('.'), message: i.message }))
     res.status(400).json({ error: { code: 'VALIDATION', message: 'Data yang dikirim tidak valid.', details } })
+    return
+  }
+  if (err instanceof multer.MulterError) {
+    const message = err.code === 'LIMIT_FILE_SIZE' ? 'Ukuran foto terlalu besar.' : 'Unggahan tidak valid.'
+    res.status(400).json({ error: { code: 'VALIDATION', message } })
     return
   }
   if (err instanceof AppError) {

@@ -49,3 +49,14 @@ Peran: ADMIN, MANAGER.
 | PUT | `/schools/:id/assignment` | `{ agentId }`. Tugaskan/pindahkan dalam satu transaksi (tutup baris lama, buat baru, porsi 100); agent yang sama = tanpa perubahan. Batas `MAX_AGENTS_PER_SCHOOL`. Audit ASSIGN/UNASSIGN. |
 | GET | `/retention-targets` | `{ items:[{year,targetPercent,isDefault,cohortValue,signedValue,retention,status: NONE\|ON_TARGET\|BELOW}] }` dari modul retention B1 |
 | PUT | `/retention-targets/:year` | `{ targetPercent }` (0–100), dikembalikan daftar terbaru |
+
+## Kunjungan (B7)
+Kunjungan: `{ id, agentId, agentName, schoolId, schoolName, assigned, timezone, checkInAt, checkOutAt, durationMinutes, status: ONGOING|DONE, report, accuracyM, lat, lng, hasPhoto }`. Waktu ISO UTC; tampilkan di `timezone` kunjungan.
+| Metode | Path | Peran | Keterangan |
+|---|---|---|---|
+| POST | `/visits/check-in` | AGENT | `multipart/form-data`: `schoolId, lat, lng, accuracy?, photo` (JPEG/PNG/WebP asli, maks 8 MB). Jam dari server, zona agent disalin. Satu kunjungan ONGOING per agent (409 bila ada). Boleh di sekolah yang tidak ditugaskan. |
+| POST | `/visits/:id/check-out` | AGENT (pemilik) | `{ report }` wajib. 409 bila sudah selesai. |
+| GET | `/visits?from&to&agentId&schoolId&status&page&pageSize` | semua (AGENT: milik sendiri) | `{ total, items }`, terbaru dulu. |
+| GET | `/visits/:id` | semua (AGENT: milik sendiri; lainnya 404) | `{ visit }` |
+| GET | `/visits/:id/photo` | sama | Gambar; `Cache-Control: no-store`, `nosniff`. Satu-satunya jalan ke foto (folder `PHOTO_STORAGE_DIR` di luar publik). |
+Audit CHECK_IN/CHECK_OUT hanya memuat `schoolId`, tanpa koordinat.
