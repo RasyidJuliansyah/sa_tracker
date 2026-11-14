@@ -47,7 +47,7 @@ csvRouter.get('/export/contracts', ...guard, async (req, res, next) => {
     await send(req, res, 'Riwayat kontrak', q.label || `Tahun berakhir ${q.year}`, 'riwayat-kontrak.csv', () => buildContractsCsv(q))
   } catch (e) { next(e) }
 })
-csvRouter.get('/export/visits', ...guard, async (req, res, next) => {
+csvRouter.get('/export/visits', authenticate, requireRole('MANAGER'), async (req, res, next) => {
   try {
     const q = z.object({ from: dateKey.optional(), to: dateKey.optional(), agentId: num, label: z.string().max(100).optional() }).parse(req.query)
     await send(req, res, 'Rekap kunjungan', q.label || 'Semua', 'rekap-kunjungan.csv', () => buildVisitsCsv(q))

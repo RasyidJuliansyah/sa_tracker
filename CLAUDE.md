@@ -115,6 +115,7 @@
 - Ekspor CSV menetralkan sel yang diawali `=`, `+`, `-`, `@`, tab, atau carriage return (CSV injection), dan setiap ekspor dicatat di `audit_logs` sebagai EXPORT.
 - Log aplikasi ditulis ke stdout dalam JSON satu baris. Jangan pernah mencatat password, token, isi foto, atau koordinat GPS lengkap di log aplikasi.
 - Nilai kontrak dan retention terlihat oleh ADMIN dan MANAGER untuk semua sekolah, dan oleh AGENT hanya untuk sekolah yang ditugaskan kepadanya.
+- Data kunjungan (rekap, laporan, koordinat GPS, foto) hanya untuk MANAGER dan AGENT pemiliknya. ADMIN tidak mengaksesnya, termasuk ekspor rekap kunjungan.
 - Foto kunjungan, koordinat GPS, dan nilai kontrak sekolah termasuk data sensitif. Folder foto berada di luar `public/` dan tidak di-commit.
 
 ## Jangan lakukan

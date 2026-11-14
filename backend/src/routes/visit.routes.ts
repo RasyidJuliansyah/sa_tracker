@@ -32,14 +32,16 @@ visitRouter.post('/visits/:id/check-out', requireRole('AGENT'), async (req, res,
     res.json({ visit: await checkOut(req.user!, idParam.parse(req.params).id, report, ctx(req)) })
   } catch (e) { next(e) }
 })
-visitRouter.get('/visits', async (req, res, next) => {
+// Data kunjungan (GPS, foto, laporan) hanya untuk MANAGER dan AGENT pemiliknya; ADMIN tidak.
+const viewVisits = requireRole('MANAGER', 'AGENT')
+visitRouter.get('/visits', viewVisits, async (req, res, next) => {
   try { res.json(await listVisits(req.user!, listQuery.parse(req.query))) } catch (e) { next(e) }
 })
-visitRouter.get('/visits/:id', async (req, res, next) => {
+visitRouter.get('/visits/:id', viewVisits, async (req, res, next) => {
   try { res.json({ visit: await getVisit(req.user!, idParam.parse(req.params).id) }) } catch (e) { next(e) }
 })
 // Foto hanya lewat rute ini: cek login, peran, dan kepemilikan.
-visitRouter.get('/visits/:id/photo', async (req, res, next) => {
+visitRouter.get('/visits/:id/photo', viewVisits, async (req, res, next) => {
   try {
     const rel = await photoPathFor(req.user!, idParam.parse(req.params).id)
     const abs = photoAbsolutePath(rel)
