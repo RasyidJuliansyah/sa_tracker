@@ -6,14 +6,14 @@ import DataTableFooter from '@/components/DataTableFooter.vue'
 import EmptyState from '@/components/EmptyState.vue'
 import StatusChip, { type ChipTone } from '@/components/StatusChip.vue'
 import type { AuditAction, MockAuditEntry } from '@/mocks/admin'
-import { auditActors, auditDataTypes, listAudit } from '@/services/admin'
+import { auditDataTypes, listAudit, listAuditActors } from '@/services/admin'
 import { IANA_ZONE } from '@/utils/timezone'
 
 // Audit log (Figma 25:1265). Dipakai admin dan manager, tidak bergantung pada peran. Hanya baca.
 const actionMeta: Record<AuditAction, { label: string; tone: ChipTone }> = {
   CHECK_OUT: { label: 'Check-out', tone: 'info' }, CHECK_IN: { label: 'Check-in', tone: 'info' }, LOGIN: { label: 'Login', tone: 'neutral' },
   EXPORT: { label: 'Ekspor', tone: 'brand' }, MOVE: { label: 'Pindah', tone: 'accent' }, CREATE: { label: 'Tambah', tone: 'success' },
-  UPDATE: { label: 'Ubah', tone: 'warning' }, IMPORT: { label: 'Impor', tone: 'brand' }, DEACTIVATE: { label: 'Nonaktifkan', tone: 'error' },
+  UPDATE: { label: 'Ubah', tone: 'warning' }, LOGIN_FAILED: { label: 'Login gagal', tone: 'error' }, PASSWORD_CHANGE: { label: 'Reset password', tone: 'warning' }, IMPORT: { label: 'Impor', tone: 'brand' }, DEACTIVATE: { label: 'Nonaktifkan', tone: 'error' },
 }
 const headers = [
   { title: 'Waktu', key: 'at', sortable: false, width: 130 },
@@ -23,7 +23,8 @@ const headers = [
 ]
 const typeItems = [{ title: 'Semua jenis', value: null }, ...auditDataTypes.map((t) => ({ title: t, value: t }))]
 const actionItems = [{ title: 'Semua aksi', value: null }, ...Object.entries(actionMeta).map(([value, m]) => ({ title: m.label, value }))]
-const actorItems = [{ title: 'Semua pelaku', value: null }, ...auditActors.map((a) => ({ title: a, value: a }))]
+const actorItems = ref<{ title: string; value: string | null }[]>([{ title: 'Semua pelaku', value: null }])
+onMounted(async () => { actorItems.value = [{ title: 'Semua pelaku', value: null }, ...(await listAuditActors()).map((a) => ({ title: a, value: a }))] })
 
 const items = ref<MockAuditEntry[]>([])
 const dataType = ref<string | null>(null)

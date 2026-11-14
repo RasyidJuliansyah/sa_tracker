@@ -1,6 +1,9 @@
 // Lapisan layanan manager. Sekarang membaca data tiruan dalam memori; nanti diganti panggilan API
 // tanpa mengubah layar yang membacanya.
 import { initialAgents, initialVisits, mockSchools, type MockAgent, type MockManagerVisit, type MockSchoolRef } from '@/mocks/manager'
+import { MOCK_AUTH } from '@/stores/session'
+import { api } from './http'
+import { lastLoginLabel } from './admin.api'
 import { wibDateKey, type IndoTimezone } from '@/utils/timezone'
 
 export type VisitStatusKey = 'ONGOING' | 'COMPLETED'
@@ -82,7 +85,21 @@ export function googleMapsUrl(lat: number, lng: number): string {
 export interface AgentInput { name: string; timezone: IndoTimezone; active: boolean }
 export interface AgentFilter { query: string; status: 'ACTIVE' | 'INACTIVE' | null }
 
+async function listAgentsApi(filter: AgentFilter): Promise<MockAgent[]> {
+  const qs = new URLSearchParams({ role: 'AGENT' })
+  if (filter.query.trim()) qs.set('query', filter.query.trim())
+  if (filter.status) qs.set('status', filter.status === 'ACTIVE' ? 'ACTIVE' : 'INACTIVE')
+  const { items } = await api<{ items: { id: number; name: string; email: string; timezone: IndoTimezone; status: string; lastLoginAt: string | null }[] }>(`/users?${qs}`)
+  // "Aktif" di filter UI mencakup akun yang belum login pertama.
+  const all = filter.status === 'ACTIVE'
+    ? [...items, ...(await api<{ items: typeof items }>(`/users?role=AGENT&status=MUST_CHANGE_PASSWORD${filter.query.trim() ? `&query=${encodeURIComponent(filter.query.trim())}` : ''}`)).items]
+    : items
+  // schoolCount menunggu penugasan (B6)
+  return all.map((a) => ({ id: a.id, name: a.name, email: a.email, timezone: a.timezone, schoolCount: 0, active: a.status !== 'INACTIVE', lastLoginLabel: lastLoginLabel(a.lastLoginAt) }))
+}
+
 export async function listAgents(filter: AgentFilter): Promise<MockAgent[]> {
+  if (!MOCK_AUTH) return listAgentsApi(filter)
   const q = filter.query.trim().toLowerCase()
   return agents
     .filter((a) => (!q || a.name.toLowerCase().includes(q) || a.email.toLowerCase().includes(q)) && (!filter.status || a.active === (filter.status === 'ACTIVE')))
@@ -91,6 +108,10 @@ export async function listAgents(filter: AgentFilter): Promise<MockAgent[]> {
 
 /** Manager hanya boleh mengubah nama, zona waktu, dan status aktif akun berperan agent. */
 export async function updateAgent(id: number, input: AgentInput): Promise<void> {
+  if (!MOCK_AUTH) {
+    await api(`/users/${id}`, { method: 'PATCH', body: { name: input.name, timezone: input.timezone, isActive: input.active } })
+    return
+  }
   agents = agents.map((a) => (a.id === id ? { ...a, name: input.name.trim(), timezone: input.timezone, active: input.active } : a))
 }
 

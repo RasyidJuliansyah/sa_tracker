@@ -21,7 +21,7 @@ export interface MockMasterItem {
   active: boolean
 }
 
-export type AuditAction = 'CHECK_OUT' | 'CHECK_IN' | 'LOGIN' | 'EXPORT' | 'MOVE' | 'CREATE' | 'UPDATE' | 'IMPORT' | 'DEACTIVATE'
+export type AuditAction = 'CHECK_OUT' | 'CHECK_IN' | 'LOGIN' | 'EXPORT' | 'MOVE' | 'CREATE' | 'UPDATE' | 'IMPORT' | 'DEACTIVATE' | 'LOGIN_FAILED' | 'PASSWORD_CHANGE'
 export interface AuditChange { field: string; before: string | null; after: string | null }
 export interface MockAuditEntry {
   id: number
