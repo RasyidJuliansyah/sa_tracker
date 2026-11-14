@@ -2,5 +2,7 @@ import { createRouter, createWebHistory } from 'vue-router'
 
 export const router = createRouter({
   history: createWebHistory(),
-  routes: [{ path: '/', name: 'setup-check', component: () => import('@/views/SetupCheckView.vue') }],
+  routes: [
+    { path: '/login', name: 'login', component: () => import('@/views/LoginView.vue') },
+   { path: '/', name: 'setup-check', component: () => import('@/views/SetupCheckView.vue') }],
 })

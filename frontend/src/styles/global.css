@@ -48,3 +48,38 @@
 .v-data-table tbody td {
   height: 52px;
 }
+
+/* Field: padding horizontal 12px, garis border penuh (Input.md) */
+.v-field {
+  --v-field-padding-start: 12px;
+  --v-field-padding-end: 12px;
+  --v-field-border-opacity: 1;
+  height: 42px;
+}
+.v-field__input {
+  font-size: 14px;
+  min-height: 42px;
+  padding-top: 0;
+  padding-bottom: 0;
+  align-items: center;
+}
+.v-field__outline {
+  color: rgb(var(--v-theme-border));
+}
+.v-field--error .v-field__outline {
+  color: rgb(var(--v-theme-error));
+}
+.v-field .v-field__append-inner > .v-icon,
+.v-field .v-field__append-inner button {
+  color: rgb(var(--v-theme-text-secondary));
+  opacity: 1;
+}
+.v-messages__message {
+  font-size: 12px;
+  line-height: 16px;
+}
+.v-field__append-inner .v-icon {
+  font-size: 20px;
+  width: 20px;
+  height: 20px;
+}
