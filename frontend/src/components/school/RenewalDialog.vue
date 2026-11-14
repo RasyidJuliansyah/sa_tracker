@@ -89,6 +89,8 @@ function submit() {
 .renewal__preview { display: flex; align-items: center; gap: 12px; padding: 14px 16px; border-radius: 8px; background: color-mix(in srgb, rgb(var(--v-theme-success-solid)) 10%, white); color: rgb(var(--v-theme-success)); }
 .renewal__preview-title { font-size: 14px; line-height: 20px; font-weight: 600; }
 .renewal__preview-sub { font-size: 12px; line-height: 16px; }
+.renewal :deep(.v-field__input) { opacity: 1; }
+.renewal :deep(.v-input__details) { padding-inline: 0; }
 .renewal__error { font-size: 13px; color: rgb(var(--v-theme-error)); }
 .renewal__note { font-size: 12px; line-height: 16px; color: rgb(var(--v-theme-text-secondary)); }
 .renewal__actions { display: flex; justify-content: flex-end; gap: 12px; }

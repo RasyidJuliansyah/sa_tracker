@@ -19,7 +19,7 @@ function openPicker() {
   <div class="date-field">
     <LabeledField
       :id="id" :model-value="shown" :label="label" readonly placeholder="Pilih tanggal" :error-messages="errorMessages"
-      :hint="hint" persistent-hint append-inner-icon="mdi-calendar-month-outline" @click="openPicker"
+      :hint="hint" :persistent-hint="!!hint" append-inner-icon="mdi-calendar-month-outline" @click="openPicker"
     />
     <input
       :id="`${id}-native`" ref="native" v-model="model" type="date" class="date-field__native" tabindex="-1"
@@ -41,6 +41,7 @@ function openPicker() {
   cursor: pointer;
 }
 .date-field :deep(.v-field) { cursor: pointer; }
+.date-field :deep(.v-field__input) { opacity: 1; }
 .date-field :deep(.v-input__details) { padding-inline: 0; }
 .date-field :deep(.v-messages) { opacity: 1; color: rgb(var(--v-theme-text-secondary)); }
 .date-field :deep(.v-input--error .v-messages) { color: rgb(var(--v-theme-error)); }
