@@ -1,6 +1,26 @@
 import { describe, expect, it } from 'vitest'
 import { checkInRejection, checkOutRejection, filterSchools, filterVisitsByRange, findOngoing, formatCoordinates, groupSchoolsForCheckIn, groupVisitsByDay, weekStartKey } from '@/components/agent/visit-rules'
-import { mockSchools, mockVisits } from '@/mocks/agent'
+import type { Visit } from '@/mocks/agent'
+
+// Fixture lokal (dulu dari mocks/agent.ts, dipindah ke sini supaya mocks/*.ts bisa dikosongin tanpa menyentuh tes ini).
+interface MockSchool { id: number; name: string; npsn: string; city: string; assigned: boolean }
+const mockSchools: MockSchool[] = [
+  { id: 1, name: 'SMA Bina Insani Bekasi', npsn: '20219874', city: 'Bekasi', assigned: true },
+  { id: 3, name: 'SMP Gemilang Bogor', npsn: '20231456', city: 'Bogor', assigned: true },
+  { id: 5, name: 'SD Cahaya Ilmu Depok', npsn: '20228801', city: 'Depok', assigned: true },
+  { id: 4, name: 'SMK Taruna Jaya Karawang', npsn: '20217735', city: 'Karawang', assigned: true },
+  { id: 2, name: 'SMP Nusa Indah Bekasi', npsn: '20219102', city: 'Bekasi', assigned: false },
+  { id: 6, name: 'SMA Lentera Jakarta Timur', npsn: '20104417', city: 'Jakarta Timur', assigned: false },
+]
+const mockVisits: Visit[] = [
+  { id: 4, schoolId: 5, schoolName: 'SD Cahaya Ilmu Depok', checkInAt: '2026-11-13T02:00:00.000Z', checkOutAt: '2026-11-13T03:15:00.000Z', timezone: 'WIB', status: 'COMPLETED', report: 'Pendampingan guru kelas 4 membuat paket soal.' },
+  { id: 5, schoolId: 6, schoolName: 'SMA Lentera Jakarta Timur', checkInAt: '2026-11-11T06:30:00.000Z', checkOutAt: '2026-11-11T07:20:00.000Z', timezone: 'WIB', status: 'COMPLETED', report: 'Kunjungan perkenalan fitur laporan nilai.' },
+  { id: 6, schoolId: 4, schoolName: 'SMK Taruna Jaya Karawang', checkInAt: '2026-11-11T01:45:00.000Z', checkOutAt: '2026-11-11T03:05:00.000Z', timezone: 'WIB', status: 'COMPLETED', report: 'Cek kendala login siswa kelas XI.' },
+  { id: 0, schoolId: 1, schoolName: 'SMA Bina Insani Bekasi', checkInAt: '2026-11-02T03:00:00.000Z', checkOutAt: '2026-11-02T04:20:00.000Z', timezone: 'WIB', status: 'COMPLETED', report: 'Sosialisasi fitur tryout ke 12 guru. Sekolah minta jadwal TO bulan Desember.' },
+  { id: 3, schoolId: 1, schoolName: 'SMA Bina Insani Bekasi', checkInAt: '2026-11-14T02:15:00.000Z', checkOutAt: null, timezone: 'WIB', status: 'ONGOING', report: null, accuracyM: 12 },
+  { id: 2, schoolId: 2, schoolName: 'SMP Nusa Indah Bekasi', checkInAt: '2026-11-13T06:05:00.000Z', checkOutAt: '2026-11-13T07:10:00.000Z', timezone: 'WIB', status: 'COMPLETED', report: 'Demo fitur laporan nilai untuk guru kelas 8.' },
+  { id: 1, schoolId: 3, schoolName: 'SMP Gemilang Bogor', checkInAt: '2026-11-12T02:30:00.000Z', checkOutAt: '2026-11-12T04:00:00.000Z', timezone: 'WIB', status: 'COMPLETED', report: 'Pendampingan penggunaan LMS oleh wali kelas.' },
+]
 
 const NOW = new Date('2026-11-14T03:40:00.000Z') // Sabtu 14 Nov 2026 10.40 WIB
 

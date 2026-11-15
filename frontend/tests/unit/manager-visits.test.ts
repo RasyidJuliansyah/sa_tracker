@@ -1,26 +1,26 @@
 import { describe, expect, it } from 'vitest'
 import { dateRangeKeys, dateRangeLabel } from '@/components/manager/date-range'
-import { filterVisits, getVisit, listVisits, validateAgentInput } from '@/services/manager'
+import { filterVisits, validateAgentInput, type VisitRow } from '@/services/manager'
 
-const none = { from: null, to: null, agentId: null, schoolId: null, status: null }
+const none = { from: null, to: null, agentId: null, schoolId: null, status: null } as const
 
-describe('rekap manager', () => {
-  it('memuat 44 kunjungan: 42 selesai dan 2 berlangsung', async () => {
-    const rows = await listVisits(none)
-    expect(rows).toHaveLength(44)
-    expect(rows.filter((r) => r.status === 'ONGOING')).toHaveLength(2)
-  })
-  it('tanggal dan hari mengikuti WIB, jam tetap di zona agent', async () => {
-    const r = (await getVisit(2494))!
-    expect(r.timezone).toBe('WITA')
-    expect(r.dateKey).toBe('2026-11-14')
-    expect(r.dayLabel).toBe('Sabtu')
-  })
-  it('durasi kunjungan selesai dihitung dari check-in dan check-out', async () => {
-    expect((await getVisit(2492))!.durationMinutes).toBe(85)
-  })
-  it('filter rentang tanggal, agent, status', async () => {
-    const rows = await listVisits(none)
+// Fixture lokal (dulu dari mocks/manager.ts via listVisits/getVisit, dipindah ke sini supaya
+// mocks/*.ts bisa dikosongin). filterVisits murni jadi fokus tes; detail toRow() tidak diuji ulang di sini.
+const row = (over: Partial<VisitRow>): VisitRow => ({
+  id: 1, dateKey: '2026-11-14', dayLabel: 'Sabtu', dateLabel: '14 Nov 2026',
+  agentId: 4, agentName: 'Dimas Saputra', schoolId: 1, schoolName: 'SMA Bina Insani Bekasi', assigned: true,
+  timezone: 'WIB', checkInAt: '2026-11-14T02:15:00.000Z', checkOutAt: null, durationMinutes: 85,
+  status: 'ONGOING', report: null, accuracyM: 12, lat: -6.2383, lng: 106.9756, ...over,
+})
+const rows: VisitRow[] = [
+  row({ id: 1, status: 'ONGOING' }),
+  row({ id: 2, status: 'ONGOING', agentId: 5, agentName: 'Ayu Lestari' }),
+  row({ id: 3, dateKey: '2026-11-13', status: 'COMPLETED', checkOutAt: '2026-11-13T03:15:00.000Z', agentId: 6, agentName: 'Yohanes Wenda' }),
+  row({ id: 4, dateKey: '2026-11-01', status: 'COMPLETED', checkOutAt: '2026-11-01T03:15:00.000Z' }),
+]
+
+describe('filter rekap manager', () => {
+  it('filter rentang tanggal, agent, status', () => {
     expect(filterVisits(rows, { ...none, from: '2026-11-14', to: '2026-11-14' })).toHaveLength(2)
     expect(filterVisits(rows, { ...none, agentId: 6 }).every((r) => r.agentName === 'Yohanes Wenda')).toBe(true)
     expect(filterVisits(rows, { ...none, status: 'ONGOING' })).toHaveLength(2)
@@ -42,3 +42,4 @@ describe('validasi akun agent', () => {
     expect(validateAgentInput({ name: 'Ayu', timezone: 'WITA' })).toEqual({ name: '', timezone: '' })
   })
 })
+

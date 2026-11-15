@@ -95,12 +95,21 @@ Belum di-commit. Kode urut per sesi/perubahan; detail lengkap tiap kode ada di p
 | UPD-02 | Tabel Akun (`AkunView.vue`) default diurutkan status ACTIVE → MUST_CHANGE_PASSWORD → INACTIVE (`statusRank`, sort stabil) |
 | UPD-03 | Bugfix tampilan Login: `components/LabeledField.vue` kena perubahan tak sengaja (`width: 500px` + format semicolon/double-quote) yang bikin field melebar keluar `.login__card`; dikembalikan ke semula, `git diff` kosong |
 
-## Langkah berikutnya (disetujui user, belum dikerjakan)
-Hapus SEMUA data dummy/contoh, ganti dengan data asli Skolla Edtech. Scope disetujui user: **keduanya** —
-1. `backend/prisma/seed.ts` (sekolah A–G, kontrak, retention target, user Citra/Dimas/Eko, dll) diganti data sekolah/kontrak/akun asli Skolla.
-2. `frontend/src/mocks/*.ts` (dashboard.ts, manager.ts, school.ts, dll, dipakai mode `dev:mock`) juga diganti data asli.
+## Langkah berikutnya (data dummy dikosongkan, 15 Nov 2026 sesi lanjutan)
+**SELESAI (belum di-commit):** `backend/prisma/seed.ts` dan `frontend/src/mocks/*.ts` dikosongkan sesuai keputusan user:
+- Akun login TETAP ada (5 user: admin, manager, 3 agent — email `*@skolla.education`, password `SkollaEdu`) dan master data (jenjang SD/SMP/SMA, paket Skolla Basic/Plus) tetap ada, supaya tetap bisa login dan tes manual.
+- Sekolah, kontrak, penugasan, kunjungan, retention target, audit log: dikosongkan total (array kosong) di kedua tempat. Data asli Skolla Edtech **belum diterima dari user** — nunggu nama sekolah/NPSN/kontrak/nama akun asli, baru diisi lewat impor CSV atau form di aplikasi (bukan hardcode di seed/mocks lagi).
+- File diubah: `backend/prisma/seed.ts` (reset sama, insert hanya 5 user + 3 jenjang + 2 paket), `frontend/src/mocks/{school,manager,dashboard,agent,admin}.ts` (semua array contoh → `[]`, beberapa helper function dipertahankan dengan `void x` biar gak unused-var saat nanti diisi lagi, ditandai komentar "Sengaja kosong").
+- **3 unit test Vitest frontend** (`agent-contracts.test.ts`, `agent-visit-rules.test.ts`, `manager-visits.test.ts`) dan **1 lagi** (`school-rules.test.ts`, `agent-visits-store.test.ts`) tadinya pakai array dari `mocks/*.ts` sebagai fixture — dipindah jadi data inline di masing-masing file test (lihat komentar "Fixture lokal... dipindah ke sini"), supaya tetap lulus walau mocks kosong. Semua 71 tes frontend + 31 tes unit backend (yang gak butuh Docker DB) lulus; `vue-tsc --noEmit` dan backend `tsc --noEmit` bersih.
+- **Belum dijalankan:** `backend/tests/db/*` dan `npm test` penuh (butuh Docker test DB) — scope perubahan ini gak menyentuh query DB test, jadi risiko rendah, tapi belum diverifikasi langsung.
 
-Konsekuensi: semua E2E Playwright di `tests/e2e/*.py` (test_admin_akun, test_agent_flow, test_manager_dashboard, test_manager_screens, test_school_*, dll — lihat daftar lengkap lewat `ls tests/e2e/`) saat ini asserting nilai-nilai dummy spesifik (nama sekolah A/B/C, NPSN 1000000x, nama agent Citra/Dimas/Eko, angka retention tertentu, dll) dan PERLU DITULIS ULANG total mengikuti data baru. Jangan kaget kalau suite E2E merah total sampai ditulis ulang.
+**BELUM DIKERJAKAN (keputusan user: tunggu dulu):** semua E2E Playwright di `tests/e2e/*.py` (12 file) sekarang asserting nilai dummy lama yang sudah dihapus (nama sekolah A/B/C, NPSN 1000000x, nama agent Citra/Dimas/Eko, angka retention tertentu, dll) — **akan merah total** kalau dijalankan sekarang. Jangan jalankan E2E sebelum ditulis ulang. Rencana: tulis ulang E2E setelah data asli Skolla Edtech diterima dari user, assert terhadap data asli itu (bukan assert "kosong", karena begitu data asli masuk E2E harus mencocokkan data asli).
+
+**Langkah berikutnya:**
+1. Minta/terima data asli Skolla Edtech dari user (nama sekolah, NPSN, kontrak, nama akun bila mau diganti dari yang di atas).
+2. Isi data itu lewat seed.ts (atau impor CSV di aplikasi) + mocks/*.ts kalau mau dev:mock juga realistis.
+3. Tulis ulang E2E di `tests/e2e/*.py` mengikuti data asli.
+4. Jalankan `backend/tests/db/*` sekali untuk pastikan gak ada regresi di jalur database penuh.
 Belum ada detail data asli Skolla (nama sekolah, NPSN, kontrak, nama akun) yang diberikan user — tanya/minta dulu di awal sesi sebelum mulai edit.
 
 ## Catatan

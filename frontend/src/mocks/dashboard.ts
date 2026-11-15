@@ -19,28 +19,21 @@ export interface DashAgent {
   seriesColor: 'chart-1' | 'chart-2' | 'chart-3'
 }
 
-export const dashAgents: DashAgent[] = [
-  { id: 4, name: 'Dimas Saputra', timezone: 'WIB', schools: 4, retentionPct: 80.0, met: true, retainedJt: 248, cohortJt: 310, contributionPct: 33.4, visits: 14, unvisited: 1, seriesColor: 'chart-1' },
-  { id: 5, name: 'Ayu Lestari', timezone: 'WITA', schools: 6, retentionPct: 62.7, met: true, retainedJt: 296, cohortJt: 472, contributionPct: 39.9, visits: 16, unvisited: 2, seriesColor: 'chart-2' },
-  { id: 6, name: 'Yohanes Wenda', timezone: 'WIT', schools: 5, retentionPct: 43.2, met: false, retainedJt: 198, cohortJt: 458, contributionPct: 26.7, visits: 12, unvisited: 3, seriesColor: 'chart-3' },
-]
+// Sengaja kosong: diisi dari agregat backend begitu ada sekolah/kontrak/kunjungan asli.
+export const dashAgents: DashAgent[] = []
 
 export const TARGET_PERCENT = 65
 
 /** Retention tahunan (tidak ikut pilihan periode) */
 export const annualRetention = {
   year: 2026,
-  percent: 59.8,
-  status: 'MET' as 'MET' | 'BELOW',
-  retainedJt: 742,
-  targetJt: 806,
-  cohortLabel: 'Rp 1,24 M',
-  breakdown: [
-    { key: 'renewed', label: 'Sudah diperpanjang', contracts: 18, amountLabel: 'Rp 742 jt', dot: 'success-solid' },
-    { key: 'lapsed', label: 'Berakhir, belum diperpanjang', contracts: 3, amountLabel: 'Rp 238 jt', dot: 'error-solid' },
-    { key: 'pending', label: 'Belum jatuh tempo', contracts: 5, amountLabel: 'Rp 260 jt', dot: 'warning-solid' },
-  ],
-  decisionNote: 'Status dari kontrak yang sudah diputuskan: 75,7% (Rp 742 jt dari Rp 980 jt) ≥ target 65%.',
+  percent: 0,
+  status: 'BELOW' as 'MET' | 'BELOW',
+  retainedJt: 0,
+  targetJt: 0,
+  cohortLabel: 'Rp 0',
+  breakdown: [] as { key: string; label: string; contracts: number; amountLabel: string; dot: string }[],
+  decisionNote: 'Belum ada data kontrak.',
 }
 
 export interface AttentionItem {
@@ -52,13 +45,7 @@ export interface AttentionItem {
   kind: 'lapsed' | 'soon'
 }
 
-export const attentionItems: AttentionItem[] = [
-  { school: 'SMP Gemilang Bogor', agent: 'Dimas', endLabel: '30 Sep 2026', valueLabel: 'Rp 45 jt', badge: 'Lewat 45 hari', kind: 'lapsed' },
-  { school: 'SMA Mutiara Makassar', agent: 'Ayu', endLabel: '31 Okt 2026', valueLabel: 'Rp 96 jt', badge: 'Lewat 14 hari', kind: 'lapsed' },
-  { school: 'SMA Lentera Jayapura', agent: 'Yohanes', endLabel: '31 Agu 2026', valueLabel: 'Rp 74 jt', badge: 'Lewat 75 hari', kind: 'lapsed' },
-  { school: 'SD Cahaya Ilmu Depok', agent: 'Dimas', endLabel: '31 Des 2026', valueLabel: 'Rp 60 jt', badge: '47 hari lagi', kind: 'soon' },
-  { school: 'SMK Taruna Jaya Balikpapan', agent: 'Ayu', endLabel: '31 Des 2026', valueLabel: 'Rp 88 jt', badge: '47 hari lagi', kind: 'soon' },
-]
+export const attentionItems: AttentionItem[] = []
 
 export interface PeriodStats {
   renewal: { value: string; change: string; direction: 'up' | 'down'; comparison: string }
@@ -68,28 +55,11 @@ export interface PeriodStats {
   ratio: { value: string; note: string }
 }
 
+const emptyStat = { value: '0', change: '0%', direction: 'up' as const, comparison: '–' }
 export const periodStats: Record<PeriodKey, PeriodStats> = {
-  week: {
-    renewal: { value: 'Rp 120 jt', change: '+50,0%', direction: 'up', comparison: 'vs Rp 80 jt' },
-    visits: { value: '42', change: '+12,5%', direction: 'up', comparison: '2 berlangsung' },
-    schools: { value: '31', change: '+3', direction: 'up', comparison: 'vs 28' },
-    duration: { value: '58 j 20 m', change: '−4,1%', direction: 'down', comparison: 'rata-rata 1 j 23 m' },
-    ratio: { value: '36 : 6', note: '86% ditugaskan' },
-  },
-  day: {
-    renewal: { value: 'Rp 40 jt', change: '+33,3%', direction: 'up', comparison: 'vs Rp 30 jt' },
-    visits: { value: '8', change: '+14,3%', direction: 'up', comparison: '2 berlangsung' },
-    schools: { value: '8', change: '+1', direction: 'up', comparison: 'vs 7' },
-    duration: { value: '9 j 55 m', change: '−6,0%', direction: 'down', comparison: 'rata-rata 1 j 14 m' },
-    ratio: { value: '7 : 1', note: '88% ditugaskan' },
-  },
-  month: {
-    renewal: { value: 'Rp 306 jt', change: '+14,2%', direction: 'up', comparison: 'vs Rp 268 jt' },
-    visits: { value: '164', change: '+8,6%', direction: 'up', comparison: '2 berlangsung' },
-    schools: { value: '52', change: '+4', direction: 'up', comparison: 'vs 48' },
-    duration: { value: '231 j 10 m', change: '+3,2%', direction: 'up', comparison: 'rata-rata 1 j 25 m' },
-    ratio: { value: '140 : 24', note: '85% ditugaskan' },
-  },
+  week: { renewal: emptyStat, visits: emptyStat, schools: emptyStat, duration: { ...emptyStat, value: '0 j 0 m' }, ratio: { value: '0 : 0', note: '0% ditugaskan' } },
+  day: { renewal: emptyStat, visits: emptyStat, schools: emptyStat, duration: { ...emptyStat, value: '0 j 0 m' }, ratio: { value: '0 : 0', note: '0% ditugaskan' } },
+  month: { renewal: emptyStat, visits: emptyStat, schools: emptyStat, duration: { ...emptyStat, value: '0 j 0 m' }, ratio: { value: '0 : 0', note: '0% ditugaskan' } },
 }
 
 export type ChartTab = 'renewal' | 'visits' | 'duration'
@@ -109,10 +79,11 @@ export interface ChartData {
 
 // Seri Minggu persis seperti Figma (Kunjungan: 42 vs 37; Perpanjangan: Rp 120 jt vs Rp 80 jt; Durasi: 58 j 20 m vs 60 j 48 m).
 const weekLabels = ['Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab', 'Min']
+const zero7 = [0, 0, 0, 0, 0, 0, 0]
 const weekSeries: Record<ChartTab, { now: number[]; before: number[]; unit: string; title: string; nowLegend: string; beforeLegend: string; max: number }> = {
-  visits: { now: [8, 7, 9, 6, 10, 2, 0], before: [7, 6, 8, 7, 8, 1, 0], unit: 'kunjungan', title: 'Kunjungan per hari', nowLegend: 'Minggu ini: 42', beforeLegend: 'Minggu lalu: 37', max: 12 },
-  renewal: { now: [0, 30, 0, 40, 50, 0, 0], before: [0, 0, 50, 0, 30, 0, 0], unit: 'jt', title: 'Perpanjangan per hari', nowLegend: 'Minggu ini: Rp 120 jt', beforeLegend: 'Minggu lalu: Rp 80 jt', max: 60 },
-  duration: { now: [10.5, 9.3, 12.0, 8.2, 13.1, 5.2, 0], before: [11, 8.8, 12.5, 9.6, 13.5, 5.4, 0], unit: 'jam', title: 'Durasi per hari', nowLegend: 'Minggu ini: 58 j 20 m', beforeLegend: 'Minggu lalu: 60 j 48 m', max: 16 },
+  visits: { now: zero7, before: zero7, unit: 'kunjungan', title: 'Kunjungan per hari', nowLegend: 'Minggu ini: 0', beforeLegend: 'Minggu lalu: 0', max: 4 },
+  renewal: { now: zero7, before: zero7, unit: 'jt', title: 'Perpanjangan per hari', nowLegend: 'Minggu ini: Rp 0 jt', beforeLegend: 'Minggu lalu: Rp 0 jt', max: 4 },
+  duration: { now: zero7, before: zero7, unit: 'jam', title: 'Durasi per hari', nowLegend: 'Minggu ini: 0 j 0 m', beforeLegend: 'Minggu lalu: 0 j 0 m', max: 4 },
 }
 
 // Deret deterministik untuk Hari (per jam) dan Bulan (per hari) agar tab dan periode bisa dicoba.
@@ -149,11 +120,4 @@ export function chartFor(kind: PeriodKey, tab: ChartTab): ChartData {
 
 export interface UnvisitedSchool { name: string; agentId: number; agent: string; lastLabel: string }
 
-export const unvisitedSchools: UnvisitedSchool[] = [
-  { name: 'SMK Taruna Jaya Karawang', agentId: 4, agent: 'Dimas', lastLabel: 'terakhir 28 Okt 2026' },
-  { name: 'SMA Mutiara Makassar', agentId: 5, agent: 'Ayu', lastLabel: 'terakhir 2 Nov 2026' },
-  { name: 'SD Kasih Bunda Samarinda', agentId: 5, agent: 'Ayu', lastLabel: 'belum pernah dikunjungi' },
-  { name: 'SMA Lentera Jayapura', agentId: 6, agent: 'Yohanes', lastLabel: 'terakhir 20 Okt 2026' },
-  { name: 'SMP Bintang Timur Merauke', agentId: 6, agent: 'Yohanes', lastLabel: 'terakhir 27 Okt 2026' },
-  { name: 'SD Pelangi Sorong', agentId: 6, agent: 'Yohanes', lastLabel: 'terakhir 5 Nov 2026' },
-]
+export const unvisitedSchools: UnvisitedSchool[] = []

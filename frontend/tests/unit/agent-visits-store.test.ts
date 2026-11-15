@@ -1,11 +1,19 @@
 import { createPinia, setActivePinia } from 'pinia'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { VisitError, useAgentVisitsStore } from '@/stores/agent-visits'
+import { mockSchools } from '@/mocks/agent'
 
 const fix = { lat: -6.23841, lng: 106.99312, accuracy: 12.4 }
 
+// Fixture lokal (dulu dari mocks/agent.ts, dipindah ke sini supaya mocks/*.ts bisa dikosongin).
+// mocks/agent.ts (mockSchools, mockVisits) kosong secara default; store diisi manual di beforeEach.
+mockSchools.push({ id: 1, name: 'SMA Bina Insani Bekasi', npsn: '20219874', city: 'Bekasi', assigned: true }, { id: 3, name: 'SMP Gemilang Bogor', npsn: '20231456', city: 'Bogor', assigned: true })
+
 describe('store kunjungan agent', () => {
-  beforeEach(() => setActivePinia(createPinia()))
+  beforeEach(() => {
+    setActivePinia(createPinia())
+    useAgentVisitsStore().visits.push({ id: 3, schoolId: 1, schoolName: 'SMA Bina Insani Bekasi', checkInAt: '2026-11-14T02:15:00.000Z', checkOutAt: null, timezone: 'WIB', status: 'ONGOING', report: null, accuracyM: 12 })
+  })
 
   it('awalnya ada satu kunjungan berlangsung', () => {
     expect(useAgentVisitsStore().ongoing?.schoolName).toBe('SMA Bina Insani Bekasi')

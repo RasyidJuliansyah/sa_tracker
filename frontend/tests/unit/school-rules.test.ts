@@ -1,11 +1,17 @@
 import { describe, expect, it } from 'vitest'
-import { initialContracts } from '../../src/mocks/school'
+import type { MockContract } from '../../src/mocks/school'
 import { neutralizeCell, parseCsv, toCsv } from '../../src/components/school/csv'
 import { addDays, daysBetween, periodsOverlap, renewalRatio, renewalStatus, suggestRenewalPeriod, validatePeriod, validateRenewal } from '../../src/components/school/contract-rules'
 import { previewImport, summarize } from '../../src/components/school/import-rules'
 import { parseTargetPercent, targetValue, formatCompactRupiah } from '../../src/components/school/target-rules'
 
-const cahaya = initialContracts.filter((c) => c.schoolId === 4)
+// Fixture lokal (dulu dari mocks/school.ts, dipindah ke sini supaya mocks/*.ts bisa dikosongin).
+// Sekolah contoh "Cahaya Ilmu": tiga kontrak berturutan, kontrak terbaru berakhir 47 hari dari 2026-11-14.
+const cahaya: MockContract[] = [
+  { id: 6, schoolId: 4, label: 'Kontrak 2024', start: '2024-01-01', end: '2024-12-31', value: 54_000_000, signedDate: '2023-12-20', type: 'FIRST', previousContractId: null, note: 'Kontrak pertama' },
+  { id: 7, schoolId: 4, label: 'Kontrak 2025', start: '2025-01-01', end: '2025-12-31', value: 54_000_000, signedDate: '2024-12-02', type: 'RENEWAL', previousContractId: 6, note: '' },
+  { id: 8, schoolId: 4, label: 'Kontrak 2026', start: '2026-01-01', end: '2026-12-31', value: 60_000_000, signedDate: '2025-12-12', type: 'RENEWAL', previousContractId: 7, note: '' },
+]
 const base = cahaya.find((c) => c.label === 'Kontrak 2026')!
 
 describe('periode kontrak', () => {

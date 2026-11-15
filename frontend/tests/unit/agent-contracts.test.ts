@@ -1,13 +1,17 @@
 import { describe, expect, it } from 'vitest'
 import { contractRetention, contractStateChip, daysUntil, focusContract, formatPeriod, renewalStatus } from '@/components/agent/contracts'
 import type { Contract } from '@/components/agent/contracts'
-import { mockSchoolDetails } from '@/mocks/agent'
 
+// Fixture lokal (dulu dari mocks/agent.ts, dipindah ke sini supaya mocks/*.ts bisa dikosongin tanpa menyentuh tes ini).
 const TODAY = '2026-11-14'
-const bina = mockSchoolDetails.find((d) => d.id === 1)!.contracts
-const gemilang = mockSchoolDetails.find((d) => d.id === 3)!.contracts
-const depok = mockSchoolDetails.find((d) => d.id === 5)!.contracts
-const karawang = mockSchoolDetails.find((d) => d.id === 4)!.contracts
+const bina: Contract[] = [
+  { id: 12, title: 'Perpanjangan 2027', startDate: '2027-01-01', endDate: '2027-12-31', value: 80_000_000, previousContractId: 11, signedDate: '2026-11-06' },
+  { id: 11, title: 'Kontrak 2026', startDate: '2026-01-01', endDate: '2026-12-31', value: 80_000_000, previousContractId: 10, signedDate: '2025-11-20' },
+  { id: 10, title: 'Kontrak 2025', startDate: '2025-01-01', endDate: '2025-12-31', value: 72_000_000 },
+]
+const gemilang: Contract[] = [{ id: 30, title: 'Kontrak 2026', startDate: '2025-10-01', endDate: '2026-09-30', value: 45_000_000 }]
+const depok: Contract[] = [{ id: 50, title: 'Kontrak 2026', startDate: '2026-01-01', endDate: '2026-12-31', value: 60_000_000 }]
+const karawang: Contract[] = [{ id: 40, title: 'Kontrak 2026/2027', startDate: '2026-07-01', endDate: '2027-06-30', value: 95_000_000 }]
 
 describe('retention kontrak', () => {
   it('perpanjangan sama besar = 100,0%', () => {
