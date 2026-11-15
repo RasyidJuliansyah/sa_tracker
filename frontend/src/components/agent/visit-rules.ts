@@ -9,6 +9,10 @@ export interface SchoolLite {
   npsn: string
   city: string
   assigned: boolean
+  /** Ada rencana terjadwal untuk sekolah ini hari ini (WIB). */
+  hasPlanToday?: boolean
+  /** Agent boleh check-in hari ini (ditugaskan atau punya rencana terjadwal). */
+  allowedToday?: boolean
 }
 
 export type LocationState = 'idle' | 'loading' | 'ok' | 'denied' | 'unavailable' | 'timeout'
@@ -18,9 +22,17 @@ export function findOngoing(visits: Visit[]): Visit | undefined {
   return visits.find((v) => v.status === 'ONGOING')
 }
 
-/** Sekolah yang ditugaskan di atas, sisanya di bawah. Urutan asli dipertahankan di tiap kelompok. */
-export function groupSchoolsForCheckIn(schools: SchoolLite[]): { assigned: SchoolLite[]; others: SchoolLite[] } {
-  return { assigned: schools.filter((s) => s.assigned), others: schools.filter((s) => !s.assigned) }
+/**
+ * Pemilih check-in (revisi 15): hanya sekolah yang boleh dikunjungi hari ini.
+ * Sekolah dengan rencana terjadwal hari ini tampil paling atas, lalu sekolah yang ditugaskan.
+ * Sekolah yang tidak diizinkan tidak muncul; agent diarahkan mengajukan rencana.
+ * Fallback: bila `allowedToday`/`hasPlanToday` tidak ada (data lama/tiruan), pakai `assigned`.
+ */
+export function groupSchoolsForCheckIn(schools: SchoolLite[]): { planToday: SchoolLite[]; assigned: SchoolLite[] } {
+  const allowed = schools.filter((s) => (s.allowedToday ?? s.assigned))
+  const planToday = allowed.filter((s) => s.hasPlanToday)
+  const assigned = allowed.filter((s) => !s.hasPlanToday)
+  return { planToday, assigned }
 }
 
 /** Cari berdasarkan nama sekolah atau NPSN, tanpa membedakan huruf besar kecil. */

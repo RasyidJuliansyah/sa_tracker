@@ -3,14 +3,16 @@ import { checkInRejection, checkOutRejection, filterSchools, filterVisitsByRange
 import type { Visit } from '@/mocks/agent'
 
 // Fixture lokal (dulu dari mocks/agent.ts, dipindah ke sini supaya mocks/*.ts bisa dikosongin tanpa menyentuh tes ini).
-interface MockSchool { id: number; name: string; npsn: string; city: string; assigned: boolean }
+interface MockSchool { id: number; name: string; npsn: string; city: string; assigned: boolean; hasPlanToday?: boolean; allowedToday?: boolean }
 const mockSchools: MockSchool[] = [
-  { id: 1, name: 'SMA Bina Insani Bekasi', npsn: '20219874', city: 'Bekasi', assigned: true },
-  { id: 3, name: 'SMP Gemilang Bogor', npsn: '20231456', city: 'Bogor', assigned: true },
-  { id: 5, name: 'SD Cahaya Ilmu Depok', npsn: '20228801', city: 'Depok', assigned: true },
-  { id: 4, name: 'SMK Taruna Jaya Karawang', npsn: '20217735', city: 'Karawang', assigned: true },
-  { id: 2, name: 'SMP Nusa Indah Bekasi', npsn: '20219102', city: 'Bekasi', assigned: false },
-  { id: 6, name: 'SMA Lentera Jakarta Timur', npsn: '20104417', city: 'Jakarta Timur', assigned: false },
+  { id: 1, name: 'SMA Bina Insani Bekasi', npsn: '20219874', city: 'Bekasi', assigned: true, allowedToday: true },
+  { id: 3, name: 'SMP Gemilang Bogor', npsn: '20231456', city: 'Bogor', assigned: true, allowedToday: true },
+  { id: 5, name: 'SD Cahaya Ilmu Depok', npsn: '20228801', city: 'Depok', assigned: true, allowedToday: true },
+  { id: 4, name: 'SMK Taruna Jaya Karawang', npsn: '20217735', city: 'Karawang', assigned: true, allowedToday: true },
+  // sekolah lain yang punya rencana terjadwal hari ini -> boleh, tampil paling atas
+  { id: 2, name: 'SMP Nusa Indah Bekasi', npsn: '20219102', city: 'Bekasi', assigned: false, hasPlanToday: true, allowedToday: true },
+  // sekolah lain tanpa izin -> tidak muncul di pemilih
+  { id: 6, name: 'SMA Lentera Jakarta Timur', npsn: '20104417', city: 'Jakarta Timur', assigned: false, allowedToday: false },
 ]
 const mockVisits: Visit[] = [
   { id: 4, schoolId: 5, schoolName: 'SD Cahaya Ilmu Depok', checkInAt: '2026-11-13T02:00:00.000Z', checkOutAt: '2026-11-13T03:15:00.000Z', timezone: 'WIB', status: 'COMPLETED', report: 'Pendampingan guru kelas 4 membuat paket soal.' },
@@ -35,9 +37,13 @@ describe('findOngoing', () => {
 
 describe('urutan sekolah di check-in', () => {
   it('sekolah yang ditugaskan di atas, urutan asli terjaga', () => {
-    const { assigned, others } = groupSchoolsForCheckIn(mockSchools)
+    const { planToday, assigned } = groupSchoolsForCheckIn(mockSchools)
+    // rencana hari ini di atas
+    expect(planToday.map((s) => s.name)).toEqual(['SMP Nusa Indah Bekasi'])
+    // sekolah yang ditugaskan (tanpa rencana hari ini)
     expect(assigned.map((s) => s.name)).toEqual(['SMA Bina Insani Bekasi', 'SMP Gemilang Bogor', 'SD Cahaya Ilmu Depok', 'SMK Taruna Jaya Karawang'])
-    expect(others.map((s) => s.name)).toEqual(['SMP Nusa Indah Bekasi', 'SMA Lentera Jakarta Timur'])
+    // sekolah tanpa izin (SMA Lentera) tidak muncul sama sekali
+    expect([...planToday, ...assigned].some((s) => s.name === 'SMA Lentera Jakarta Timur')).toBe(false)
   })
   it('pencarian lewat nama atau NPSN', () => {
     expect(filterSchools(mockSchools, 'gemilang')).toHaveLength(1)

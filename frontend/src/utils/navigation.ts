@@ -37,6 +37,7 @@ export const sidebarItems: Record<'ADMIN' | 'MANAGER', NavItem[]> = {
 export const agentNav: NavItem[] = [
   { label: 'Beranda', to: '/agent', icon: 'mdi-home-outline' },
   { label: 'Check-in', to: '/agent/check-in', icon: 'mdi-map-marker-check-outline' },
+  { label: 'Rencana', to: '/agent/rencana', icon: 'mdi-calendar-outline', alsoActiveFor: ['/agent/rencana/'] },
   { label: 'Sekolah saya', to: '/agent/sekolah-saya', icon: 'mdi-school-outline', alsoActiveFor: ['/agent/sekolah/'] },
   { label: 'Riwayat', to: '/agent/riwayat', icon: 'mdi-history' },
 ]

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import ChangeChip from '@/components/ChangeChip.vue'
 import StatusChip from '@/components/StatusChip.vue'
@@ -9,9 +9,10 @@ import SectionCard from '@/components/agent/SectionCard.vue'
 import { formatVisitMeta, visitMinutes } from '@/components/agent/visit-format'
 import type { PeriodKey } from '@/mocks/agent'
 import { agentService } from '@/services/agent'
+import { agentPlans, planStatusChip, sourceChip, type Plan } from '@/services/agent-plans'
 import { useAgentVisitsStore } from '@/stores/agent-visits'
 import { formatDateLong, formatDuration, formatPercent, formatRupiahCompact } from '@/utils/format'
-import { formatClock } from '@/utils/timezone'
+import { formatClock, wibDateKey } from '@/utils/timezone'
 
 const router = useRouter()
 const store = useAgentVisitsStore()
@@ -51,6 +52,14 @@ const ongoingText = computed(() => {
   if (!v) return ''
   return `Check-in ${formatClock(v.checkInAt, v.timezone)} · berjalan ${formatDuration(visitMinutes(v, store.now))}`
 })
+
+// Rencana hari ini (Terjadwal pada tanggal WIB hari ini): jadwal dari manager dan rencana sendiri.
+const todayPlans = ref<Plan[]>([])
+onMounted(async () => {
+  const today = wibDateKey(store.now)
+  const upcoming = await agentPlans.list(true)
+  todayPlans.value = upcoming.filter((p) => p.planDate === today && p.status === 'APPROVED')
+})
 </script>
 
 <template>
@@ -73,6 +82,19 @@ const ongoingText = computed(() => {
       <p class="idle__text">Mulai kunjungan dengan memilih sekolah, foto, dan lokasi.</p>
       <v-btn color="primary" rounded="pill" height="44" prepend-icon="mdi-map-marker-check-outline" to="/agent/check-in">Check-in</v-btn>
     </v-card>
+
+    <SectionCard v-if="todayPlans.length" title="Rencana hari ini" :subtitle="formatDateLong(store.now)">
+      <template #action><StatusChip :label="String(todayPlans.length)" tone="info" /></template>
+      <router-link v-for="p in todayPlans" :key="p.id" to="/agent/rencana" class="plan-row">
+        <span class="plan-row__icon"><v-icon icon="mdi-calendar-outline" size="20" /></span>
+        <span class="plan-row__body">
+          <span class="plan-row__name">{{ p.schoolName }}</span>
+          <span class="plan-row__meta">{{ sourceChip(p.source).label }} · {{ p.purpose }}</span>
+        </span>
+        <StatusChip :label="planStatusChip(p.status).label" :tone="planStatusChip(p.status).tone" />
+      </router-link>
+      <router-link to="/agent/rencana" class="plan-row__link">Lihat semua rencana</router-link>
+    </SectionCard>
 
     <PeriodPicker v-model="period" :label="summary.label" />
 
@@ -150,6 +172,12 @@ const ongoingText = computed(() => {
 .beranda { display: flex; flex-direction: column; gap: 16px; }
 .beranda__hello { font-size: 20px; line-height: 28px; font-weight: 600; }
 .beranda__date, .caption { font-size: 12px; line-height: 16px; color: rgb(var(--v-theme-text-secondary)); }
+.plan-row { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-bottom: 1px solid rgb(var(--v-theme-border)); color: inherit; text-decoration: none; }
+.plan-row__icon { display: flex; align-items: center; justify-content: center; flex: none; width: 36px; height: 36px; border-radius: 8px; background: rgb(var(--v-theme-brand-softer)); color: rgb(var(--v-theme-secondary)); }
+.plan-row__body { display: flex; flex: 1; flex-direction: column; gap: 2px; min-width: 0; }
+.plan-row__name { font-size: 14px; line-height: 20px; font-weight: 500; }
+.plan-row__meta { font-size: 12px; line-height: 16px; color: rgb(var(--v-theme-text-secondary)); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.plan-row__link { display: inline-block; padding-top: 4px; font-size: 13px; font-weight: 600; color: rgb(var(--v-theme-secondary)); text-decoration: none; }
 .ongoing { display: flex; flex-direction: column; gap: 12px; padding: 16px; border-radius: 8px; background: rgb(var(--v-theme-primary)); color: rgb(var(--v-theme-on-primary)); }
 .ongoing__label { display: flex; align-items: center; gap: 8px; font-size: 13px; line-height: 18px; font-weight: 500; }
 .ongoing__school { font-size: 16px; line-height: 24px; font-weight: 600; }

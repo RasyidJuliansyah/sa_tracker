@@ -3,7 +3,8 @@ import StatusChip from '@/components/StatusChip.vue'
 import type { SchoolLite } from './visit-rules'
 
 // Pilihan sekolah (radio berbentuk kartu). Terpilih: border 2px brand + lingkaran centang.
-defineProps<{ school: SchoolLite; selected: boolean }>()
+// `showPending` (layar Buat rencana): tandai sekolah di luar tugas dengan "Perlu persetujuan".
+defineProps<{ school: SchoolLite; selected: boolean; showPending?: boolean }>()
 defineEmits<{ select: [] }>()
 </script>
 
@@ -13,6 +14,7 @@ defineEmits<{ select: [] }>()
       <span class="option__name">{{ school.name }}</span>
       <span class="option__meta">NPSN {{ school.npsn }} · {{ school.city }}</span>
       <StatusChip v-if="school.assigned" label="Ditugaskan" tone="brand" class="option__chip" />
+      <StatusChip v-else-if="showPending" label="Perlu persetujuan" tone="warning" class="option__chip" />
     </span>
     <span class="option__radio" :class="{ 'option__radio--on': selected }" aria-hidden="true">
       <v-icon v-if="selected" icon="mdi-check" size="16" />
