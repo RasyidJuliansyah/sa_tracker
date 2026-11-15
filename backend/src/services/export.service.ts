@@ -19,6 +19,20 @@ export async function buildSchoolsCsv(actor: AuthUser, f: { jenjangId?: number; 
   return { content: toCsv(['NPSN', 'Nama sekolah', 'Jenjang', 'Paket', 'Kota', 'Agent', 'Kontrak berjalan', 'Nilai kontrak', 'Status perpanjangan'], body), rows: body.length }
 }
 
+const STATUS_LABEL: Record<string, string> = { ACTIVE: 'Aktif', MUST_CHANGE_PASSWORD: 'Wajib ganti password', INACTIVE: 'Nonaktif' }
+
+export async function buildAccountsCsv(f: { role?: string; status?: string }): Promise<CsvResult> {
+  const users = await prisma.user.findMany({
+    where: { ...(f.role ? { role: f.role as 'ADMIN' | 'MANAGER' | 'AGENT' } : {}), ...(f.status === 'INACTIVE' ? { isActive: false } : f.status === 'ACTIVE' ? { isActive: true, mustChangePassword: false } : f.status === 'MUST_CHANGE_PASSWORD' ? { isActive: true, mustChangePassword: true } : {}) },
+    orderBy: { id: 'asc' },
+  })
+  const body = users.map((u) => {
+    const status = !u.isActive ? 'INACTIVE' : u.mustChangePassword ? 'MUST_CHANGE_PASSWORD' : 'ACTIVE'
+    return [u.name, u.email, u.role, u.timezone, STATUS_LABEL[status], u.lastLoginAt ? wibDate(u.lastLoginAt) : '']
+  })
+  return { content: toCsv(['Nama', 'Email', 'Peran', 'Zona waktu', 'Status', 'Login terakhir (WIB)'], body), rows: body.length }
+}
+
 export async function buildContractsCsv(f: { year: number; agentId?: number }): Promise<CsvResult> {
   const rows = await prisma.schoolContract.findMany({ include: { school: { select: { name: true, assignments: { where: { unassignedAt: null }, select: { agentId: true } } } } } })
   const lite: ContractRow[] = rows.map((c) => ({ id: c.id, schoolId: c.schoolId, endDate: dk(c.contractEndDate), value: Number(c.contractValue), previousContractId: c.previousContractId, type: c.contractType, signedDate: c.signedDate ? dk(c.signedDate) : null }))

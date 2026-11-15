@@ -27,7 +27,7 @@ export const router = createRouter({
 // Peran yang boleh membuka tiap bagian. Backend tetap pengaman utama; ini hanya pengalihan.
 function allowedRoles(path: string): Role[] {
   if (path.startsWith('/agent')) return ['AGENT']
-  if (path === '/akun' || path === '/master-data') return ['ADMIN']
+  if (path === '/akun' || path.startsWith('/akun/') || path === '/master-data') return ['ADMIN']
   return ['ADMIN', 'MANAGER']
 }
 

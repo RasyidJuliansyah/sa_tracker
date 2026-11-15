@@ -1,9 +1,10 @@
 import { Router, type Request, type Response } from 'express'
 import { z } from 'zod'
 import { authenticate, requireRole } from '../middleware/auth.js'
+import * as accountCsv from '../services/account-csv.service.js'
 import { commitImport, previewImport, templateCsv } from '../services/csv-import.service.js'
-import { buildContractsCsv, buildSchoolsCsv, buildVisitsCsv, exportLog, logExport, type CsvResult } from '../services/export.service.js'
-import { dateKey } from '../validators/common.js'
+import { buildAccountsCsv, buildContractsCsv, buildSchoolsCsv, buildVisitsCsv, exportLog, logExport, type CsvResult } from '../services/export.service.js'
+import { dateKey, roleEnum } from '../validators/common.js'
 
 const ctx = (req: Request) => ({ ip: req.ip, userAgent: req.headers['user-agent'] })
 const body = z.object({ csv: z.string().min(1).max(5_000_000) })
@@ -11,6 +12,7 @@ const num = z.coerce.number().int().positive().optional()
 
 export const csvRouter = Router()
 const guard = [authenticate, requireRole('ADMIN', 'MANAGER')]
+const adminGuard = [authenticate, requireRole('ADMIN')]
 
 // Impor: JSON { csv } (teks file); batas 6 MB diatur di app.ts khusus /api/import.
 csvRouter.get('/import/schools/template', ...guard, (_req, res) => {
@@ -55,4 +57,23 @@ csvRouter.get('/export/visits', ...guard, async (req, res, next) => {
 })
 csvRouter.get('/export/log', ...guard, async (_req, res, next) => {
   try { res.json({ items: await exportLog() }) } catch (e) { next(e) }
+})
+
+// Impor/ekspor akun: hanya admin (sejalan dengan /users yang admin-only untuk buat/reset).
+csvRouter.get('/import/accounts/template', ...adminGuard, (_req, res) => {
+  res.setHeader('Content-Type', 'text/csv; charset=utf-8')
+  res.setHeader('Content-Disposition', 'attachment; filename="template-impor-akun.csv"')
+  res.send(accountCsv.templateCsv())
+})
+csvRouter.post('/import/accounts/preview', ...adminGuard, async (req, res, next) => {
+  try { res.json(await accountCsv.previewImport(body.parse(req.body).csv)) } catch (e) { next(e) }
+})
+csvRouter.post('/import/accounts/commit', ...adminGuard, async (req, res, next) => {
+  try { res.json(await accountCsv.commitImport(req.user!, body.parse(req.body).csv, ctx(req))) } catch (e) { next(e) }
+})
+csvRouter.get('/export/accounts', ...adminGuard, async (req, res, next) => {
+  try {
+    const q = z.object({ role: roleEnum.optional(), status: z.enum(['ACTIVE', 'MUST_CHANGE_PASSWORD', 'INACTIVE']).optional(), label: z.string().max(100).optional() }).parse(req.query)
+    await send(req, res, 'Data akun', q.label || 'Semua', 'data-akun.csv', () => buildAccountsCsv(q))
+  } catch (e) { next(e) }
 })

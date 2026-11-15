@@ -14,7 +14,7 @@ const title = computed(() => String(route.meta.title ?? ''))
 </script>
 
 <template>
-  <AppSidebar :items="items" />
+  <AppSidebar :items="items" @logout="session.logout()" />
   <AppTopBar :title="title" />
   <v-main class="desktop-main">
     <div class="desktop-main__content"><router-view /></div>

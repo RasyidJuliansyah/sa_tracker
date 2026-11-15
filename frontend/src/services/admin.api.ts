@@ -52,6 +52,10 @@ export function emailExists(email: string, exceptId?: number): boolean {
   return accountCache.some((a) => a.email.toLowerCase() === email.trim().toLowerCase() && a.id !== exceptId)
 }
 
+export async function listAccountExports(): Promise<import('./admin.mock').MockAccountExportLog[]> {
+  return (await api<{ items: import('./admin.mock').MockAccountExportLog[] }>('/export/log')).items
+}
+
 export async function listMaster(kind: MasterKind): Promise<MockMasterItem[]> {
   const { items } = await api<{ items: MockMasterItem[] }>(`/master/${path(kind)}`)
   masterCache[kind] = items

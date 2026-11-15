@@ -23,6 +23,8 @@ const title = computed(() => String(route.meta.title ?? ''))
   background: rgb(var(--v-theme-background));
 }
 .mobile-main__content {
+  max-width: 800px;
+  margin: 0 auto;
   padding: 16px;
 }
 .mobile-main__content--nav {

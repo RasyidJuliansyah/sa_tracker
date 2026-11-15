@@ -1,0 +1,10 @@
+{
+  "name": "sa-visit-tracker",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "bash -c 'export PATH=/opt/homebrew/bin:$PATH && (cd backend && fnm exec --using=24 npm run dev) & (cd frontend && fnm exec --using=24 npm run dev) & wait'",
+    "dev:backend": "bash -c 'export PATH=/opt/homebrew/bin:$PATH && cd backend && fnm exec --using=24 npm run dev'",
+    "dev:frontend": "bash -c 'export PATH=/opt/homebrew/bin:$PATH && cd frontend && fnm exec --using=24 npm run dev'"
+  }
+}

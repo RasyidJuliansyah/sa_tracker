@@ -37,5 +37,7 @@ export const vuetify = createVuetify({
     VTextarea: { variant: 'outlined' },
     VAppBar: { flat: true, height: 70 },
     VNavigationDrawer: { width: 220, border: 'e' },
+    VCheckbox: { color: 'primary' },
+    VCheckboxBtn: { color: 'primary' },
   },
 })

@@ -3,11 +3,12 @@ import { MOCK_AUTH } from '@/stores/session'
 import * as api from './admin.api'
 import * as mock from './admin.mock'
 
-export type { AccountFilter, AccountInput, AuditFilter, MasterKind } from './admin.mock'
-export { auditDataTypes, generateTempPassword, isValidEmail } from './admin.mock'
+export type { AccountFilter, AccountInput, AuditFilter, MasterKind, MockAccountExportLog } from './admin.mock'
+export { auditDataTypes, existingAccountEmails, generateTempPassword, isValidEmail } from './admin.mock'
 
 const impl = MOCK_AUTH ? mock : api
 export const listAccounts = impl.listAccounts
+export const listAccountExports = impl.listAccountExports
 export const createAccount = impl.createAccount
 export const updateAccount = impl.updateAccount
 export const setAccountActive = impl.setAccountActive

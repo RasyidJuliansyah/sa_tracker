@@ -12,7 +12,7 @@ import pytest
 from playwright.sync_api import Page, expect
 
 pytestmark = pytest.mark.skipif(os.environ.get("LIVE_E2E") != "1", reason="butuh backend sungguhan")
-PW = os.environ.get("SEED_PASSWORD", "Password123!")
+PW = os.environ.get("SEED_PASSWORD", "SkollaEdu")
 
 
 def login(page: Page, email: str, password: str = PW) -> None:
@@ -24,7 +24,7 @@ def login(page: Page, email: str, password: str = PW) -> None:
 
 
 def test_login_salah_menampilkan_galat(page: Page) -> None:
-    login(page, "admin@skolla.test", "salah-salah")
+    login(page, "admin@skolla.education", "salah-salah")
     expect(page.get_by_test_id("login-alert")).to_be_visible()
     expect(page).to_have_url(re.compile(r"/login$"))
 
@@ -35,10 +35,10 @@ def test_tanpa_login_dialihkan_ke_login(page: Page) -> None:
 
 
 def test_admin_login_lalu_kelola_akun(page: Page) -> None:
-    login(page, "admin@skolla.test")
+    login(page, "admin@skolla.education")
     expect(page).to_have_url(re.compile(r"/akun$"))
     expect(page.get_by_text("Admin Skolla").first).to_be_visible()
-    email = f"uji{int(time.time())}@skolla.test"
+    email = f"uji{int(time.time())}@skolla.education"
     page.get_by_role("button", name="Tambah akun").click()
     page.fill("#acc-name", "Akun Uji Live")
     page.fill("#acc-email", email)
@@ -48,7 +48,7 @@ def test_admin_login_lalu_kelola_akun(page: Page) -> None:
 
 
 def test_admin_master_data_dan_audit_log(page: Page) -> None:
-    login(page, "admin@skolla.test")
+    login(page, "admin@skolla.education")
     page.goto("/master-data")
     expect(page.get_by_text("SMP", exact=True).first).to_be_visible()
     page.goto("/audit-log")
@@ -56,7 +56,7 @@ def test_admin_master_data_dan_audit_log(page: Page) -> None:
 
 
 def test_manager_akun_agent_dan_pembatasan_rute(page: Page) -> None:
-    login(page, "manager@skolla.test")
+    login(page, "manager@skolla.education")
     expect(page).to_have_url(re.compile(r"/dashboard$"))
     page.goto("/akun-agent")
     expect(page.get_by_text("Citra Agent")).to_be_visible()
@@ -65,7 +65,7 @@ def test_manager_akun_agent_dan_pembatasan_rute(page: Page) -> None:
 
 
 def test_agent_dialihkan_ke_beranda_agent(page: Page) -> None:
-    login(page, "citra@skolla.test")
+    login(page, "citra@skolla.education")
     expect(page).to_have_url(re.compile(r"/agent$"))
     page.goto("/audit-log")
     expect(page).to_have_url(re.compile(r"/agent$"))
@@ -73,7 +73,7 @@ def test_agent_dialihkan_ke_beranda_agent(page: Page) -> None:
 
 # ---- B5/B6: sekolah, penugasan, target (data seed: Sekolah A dan B) ----
 def test_manager_daftar_dan_halaman_sekolah(page: Page) -> None:
-    login(page, "manager@skolla.test")
+    login(page, "manager@skolla.education")
     page.goto("/sekolah")
     expect(page.get_by_text("SMA Sekolah A")).to_be_visible()
     expect(page.get_by_text("SMP Sekolah B")).to_be_visible()
@@ -83,7 +83,7 @@ def test_manager_daftar_dan_halaman_sekolah(page: Page) -> None:
 
 
 def test_manager_penugasan_dan_target(page: Page) -> None:
-    login(page, "manager@skolla.test")
+    login(page, "manager@skolla.education")
     page.goto("/penugasan")
     expect(page.get_by_text("Citra Agent").first).to_be_visible()
     page.goto("/target-retention")
@@ -91,7 +91,7 @@ def test_manager_penugasan_dan_target(page: Page) -> None:
 
 
 def test_agent_tidak_melihat_sekolah_lain_lewat_api(page: Page) -> None:
-    login(page, "citra@skolla.test")
+    login(page, "citra@skolla.education")
     # Sekolah A (id 1) milik Citra; Sekolah B (id 2) milik agent lain.
     api = os.environ.get("LIVE_API", "http://localhost:3013/api")
     assert page.request.get(f"{api}/schools/1").status == 200
@@ -110,7 +110,7 @@ def test_agent_check_in_check_out_dan_manager_melihat_rekap(browser, base_url: s
         permissions=["geolocation"], geolocation={"latitude": -6.23841, "longitude": 106.99312, "accuracy": 12},
     )
     page = ctx.new_page()
-    login(page, "citra@skolla.test")
+    login(page, "citra@skolla.education")
     expect(page).to_have_url(re.compile(r"/agent$"))
     # Bersihkan kunjungan berlangsung sisa (bila ada) agar tes bisa diulang.
     if page.get_by_role("button", name="Check-out dan tulis laporan").count():
@@ -134,7 +134,7 @@ def test_agent_check_in_check_out_dan_manager_melihat_rekap(browser, base_url: s
 
     mgr = browser.new_context(viewport={"width": 1280, "height": 800}, locale="id-ID", base_url=base_url)
     mp = mgr.new_page()
-    login(mp, "manager@skolla.test")
+    login(mp, "manager@skolla.education")
     mp.goto("/rekap")
     expect(mp.get_by_text("Citra Agent").first).to_be_visible()
     mp.get_by_text("Citra Agent").first.click()
@@ -146,7 +146,7 @@ def test_agent_check_in_check_out_dan_manager_melihat_rekap(browser, base_url: s
 
 # ---- B8: dashboard dari API ----
 def test_dashboard_manager_memuat_data_nyata(page: Page) -> None:
-    login(page, "manager@skolla.test")
+    login(page, "manager@skolla.education")
     expect(page).to_have_url(re.compile(r"/dashboard$"))
     expect(page.locator(".stat-card__label", has_text="Perpanjangan ditandatangani")).to_be_visible()
     expect(page.get_by_text("Citra Agent").first).to_be_visible()
@@ -155,7 +155,7 @@ def test_dashboard_manager_memuat_data_nyata(page: Page) -> None:
 
 
 def test_beranda_agent_memuat_data_nyata(page: Page) -> None:
-    login(page, "citra@skolla.test")
+    login(page, "citra@skolla.education")
     expect(page.get_by_role("heading", name="Halo, Citra")).to_be_visible()
     expect(page.get_by_text("Kontrak perlu perhatian")).to_be_visible()
 
@@ -164,7 +164,7 @@ def test_beranda_agent_memuat_data_nyata(page: Page) -> None:
 def test_impor_csv_pratinjau_lalu_simpan_dan_ekspor(page: Page, tmp_path) -> None:
     import random
 
-    login(page, "manager@skolla.test")
+    login(page, "manager@skolla.education")
     npsn = str(random.randint(10000000, 99999999))
     csv = (
         "npsn,nama_sekolah,jenjang,paket,zona_waktu,kota,alamat,pic,kontak_pic,id_lms,tanggal_ttd,tanggal_mulai,tanggal_berakhir,nilai_kontrak\n"
@@ -188,7 +188,7 @@ def test_impor_csv_pratinjau_lalu_simpan_dan_ekspor(page: Page, tmp_path) -> Non
 
 
 def test_keluar_menghapus_sesi(page: Page) -> None:
-    login(page, "manager@skolla.test")
+    login(page, "manager@skolla.education")
     expect(page).to_have_url(re.compile(r"/dashboard$"))
     page.get_by_test_id("menu-akun").click()
     page.get_by_test_id("keluar").click()

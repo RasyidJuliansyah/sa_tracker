@@ -5,7 +5,7 @@ import bcrypt from 'bcrypt'
 import { prisma } from '../src/db.js'
 import type { IndoTimezone } from '../src/generated/prisma/client.js'
 
-const SEED_PASSWORD = 'Password123!'
+const SEED_PASSWORD = 'SkollaEdu'
 const OFFSET_HOURS: Record<IndoTimezone, number> = { WIB: 7, WITA: 8, WIT: 9 }
 const d = (s: string) => new Date(`${s}T00:00:00.000Z`)
 const JT = 1_000_000
@@ -24,11 +24,11 @@ async function main() {
   const mkUser = (name: string, email: string, role: 'ADMIN' | 'MANAGER' | 'AGENT', timezone: IndoTimezone) =>
     prisma.user.create({ data: { name, email, role, timezone, passwordHash, mustChangePassword: false } })
 
-  const admin = await mkUser('Admin Skolla', 'admin@skolla.test', 'ADMIN', 'WIB')
-  const manager = await mkUser('Maya Manager', 'manager@skolla.test', 'MANAGER', 'WIB')
-  const citra = await mkUser('Citra Agent', 'citra@skolla.test', 'AGENT', 'WIB')
-  const dimas = await mkUser('Dimas Agent', 'dimas@skolla.test', 'AGENT', 'WITA')
-  const eko = await mkUser('Eko Agent', 'eko@skolla.test', 'AGENT', 'WIT')
+  const admin = await mkUser('Admin Skolla', 'admin@skolla.education', 'ADMIN', 'WIB')
+  const manager = await mkUser('Maya Manager', 'manager@skolla.education', 'MANAGER', 'WIB')
+  const citra = await mkUser('Citra Agent', 'citra@skolla.education', 'AGENT', 'WIB')
+  const dimas = await mkUser('Dimas Agent', 'dimas@skolla.education', 'AGENT', 'WITA')
+  const eko = await mkUser('Eko Agent', 'eko@skolla.education', 'AGENT', 'WIT')
 
   const sd = await prisma.jenjang.create({ data: { name: 'SD' } })
   const smp = await prisma.jenjang.create({ data: { name: 'SMP' } })

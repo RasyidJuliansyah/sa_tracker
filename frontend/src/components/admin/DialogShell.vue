@@ -1,6 +1,6 @@
 <script setup lang="ts">
 // Rangka dialog admin: kartu 24px padding, judul + subjudul + tombol tutup. Esc dan klik latar menutup.
-const props = defineProps<{ title: string; subtitle?: string; width?: number; top?: number }>()
+const props = defineProps<{ title: string; subtitle?: string; width?: number; top?: number; icon?: string; tone?: 'error' | 'warning' | 'info' }>()
 const open = defineModel<boolean>({ default: false })
 </script>
 
@@ -8,7 +8,10 @@ const open = defineModel<boolean>({ default: false })
   <v-dialog v-model="open" class="dialog-root" :aria-label="title" :width="width ?? 540" scrim="text" :content-props="{ style: { marginTop: `${props.top ?? 120}px` } }">
     <v-card class="dialog-shell" rounded="lg">
       <header class="dialog-shell__head">
-        <div>
+        <span v-if="icon" class="dialog-shell__badge" :class="`dialog-shell__badge--${tone ?? 'info'}`" aria-hidden="true">
+          <v-icon :icon="icon" size="22" />
+        </span>
+        <div class="dialog-shell__heading">
           <h2 class="dialog-shell__title">{{ title }}</h2>
           <p v-if="subtitle" class="dialog-shell__subtitle">{{ subtitle }}</p>
         </div>
@@ -24,6 +27,11 @@ const open = defineModel<boolean>({ default: false })
 <style scoped>
 .dialog-shell { padding: 24px; border: 0; }
 .dialog-shell__head { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 20px; }
+.dialog-shell__heading { flex: 1; min-width: 0; }
+.dialog-shell__badge { display: inline-flex; align-items: center; justify-content: center; flex: none; width: 40px; height: 40px; margin-right: 12px; border-radius: 999px; }
+.dialog-shell__badge--error { background: rgb(var(--v-theme-error-surface)); color: rgb(var(--v-theme-error)); }
+.dialog-shell__badge--warning { background: rgb(var(--v-theme-warning-surface)); color: rgb(var(--v-theme-warning)); }
+.dialog-shell__badge--info { background: rgb(var(--v-theme-info-surface)); color: rgb(var(--v-theme-info)); }
 .dialog-shell__title { font-size: 20px; line-height: 28px; font-weight: 600; }
 .dialog-shell__subtitle { margin-top: 2px; font-size: 12px; line-height: 16px; color: rgb(var(--v-theme-text-secondary)); }
 .dialog-shell__close { display: inline-flex; margin: 4px 4px 0 0; border-radius: 5px; color: rgb(var(--v-theme-text-secondary)); }

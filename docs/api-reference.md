@@ -18,6 +18,14 @@ Akun: `{ id, name, email, role, timezone, status: ACTIVE|MUST_CHANGE_PASSWORD|IN
 | PATCH | `/users/:id` | ADMIN, MANAGER | `{ name?, email?, role?, timezone?, isActive? }`. Manager: hanya akun AGENT, tanpa ubah peran/email. Tidak bisa menonaktifkan/mengubah peran diri sendiri. |
 | POST | `/users/:id/reset-password` | ADMIN | `{ password? }` → `{ tempPassword }`. |
 
+### Impor/ekspor akun (ADMIN saja)
+| Metode | Path | Keterangan |
+|---|---|---|
+| GET | `/import/accounts/template` | CSV template (`nama,email,peran,zona_waktu,password`) |
+| POST | `/import/accounts/preview` | `{ csv }` → `{ rows:[{line,name,email,role,isNew,ok,message}], fileError }`, tanpa menyimpan |
+| POST | `/import/accounts/commit` | `{ csv }` → `{ created, updated, failed:[{line,message}] }`. Email yang ada diperbarui (nama/peran/zona waktu saja, email dan password tidak disentuh); baru = akun dengan password sementara. Tidak bisa mengubah akun sendiri lewat impor. Audit CREATE/UPDATE per baris + ringkasan IMPORT. |
+| GET | `/export/accounts?role&status&label` | CSV akun (nama, email, peran, zona waktu, status, login terakhir); `dryRun=1` untuk hitung baris |
+
 ## Master (B4)
 `kind` = `jenjang` atau `packages`. Item: `{ id, name, active, schoolCount }`.
 | Metode | Path | Peran |

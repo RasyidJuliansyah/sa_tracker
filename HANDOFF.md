@@ -1,4 +1,4 @@
-# Serah terima sesi (diperbarui 14 November 2026, malam, setelah Dashboard)
+# Serah terima sesi (diperbarui 15 November 2026, setelah impor/ekspor CSV akun + bugfix Login)
 
 Untuk sesi Claude Code berikutnya (akun mana pun). Baca ini dulu, lalu CLAUDE.md dan docs/ (PLAN.md, architecture.md, data-model.md, design-system.md).
 
@@ -48,6 +48,10 @@ Belum ada tombol Keluar di UI (tidak ada di Figma); `session.logout()` sudah ada
 **B10 bagian 2 (Docker + Keluar) SELESAI:** `backend/Dockerfile` (multi-stage node:24-alpine, non-root, `tsconfig.build.json` → `dist/index.js`, healthcheck, gagal-cepat tanpa `JWT_SECRET` di produksi), `frontend/Dockerfile` (konteks build = ROOT repo karena butuh `tokens.json`: `docker build -f frontend/Dockerfile .`; Nginx non-root + SPA fallback), `deploy/docker-compose.yml` (port hanya 127.0.0.1, read-only, cap_drop ALL, volume foto), `deploy/.env.production.example`, `deploy/nginx.example.conf`, `deploy/deploy.sh` (tidak menyentuh DB; delta SQL manual), `deploy/README.md` (langkah + uji di HP). Kedua image sudah dibuild dan backend diuji berjalan (health 200, uid non-root, HSTS aktif). Tombol Keluar: menu akun di app bar desktop dan avatar di top bar HP (`session.logout()` → hapus cookie, muat ulang ke /login). E2E live 14, mock 88.
 Catatan: file Docker produksi ada di `deploy/` (docs/architecture.md menyebut root; folder `deploy/` dipakai agar rapi). Sisa proyek lama di root SUDAH DIHAPUS atas persetujuan user (PHASE_*.md, README*, skrip lama, package.json/node_modules root, `docker-compose.yml` dan `scripts/` lama, serta `~/Development/sa-visit-tracker-old/`).
 **Berikutnya:** uji kamera/GPS di HP lewat HTTPS di server nyata, keputusan `sharp` (EXIF), tinjau branch `feat/api-fondasi` lalu merge ke `main`.
+**Impor/ekspor CSV akun (perluasan B9, belum di-commit) SELESAI:** backend `account-csv.service.ts` baru (`templateCsv`, `previewImport`, `commitImport`: validasi email/peran/zona waktu/password, akun baru pakai bcrypt + `generateTempPassword`, akun ada diperbarui tanpa mengubah email/password, audit per baris + ringkasan IMPORT, tidak bisa mengubah akun actor sendiri lewat impor); `buildAccountsCsv` di `export.service.ts` (filter peran/status, kolom Nama/Email/Peran/Zona waktu/Status/Login terakhir); route baru admin-only di `csv.routes.ts`: `GET /import/accounts/template`, `POST /import/accounts/preview`, `POST /import/accounts/commit`, `GET /export/accounts`. `tsc --noEmit` backend lulus; kontrak sudah di `docs/api-reference.md`.
+Frontend: `account-import-rules.ts` baru (cermin validasi backend, dipakai mode `dev:mock`); `AccountImportPanel.vue` dan `AccountExportPanel.vue` baru (pola sama ImportPanel/ExportPanel sekolah B9: unggah→pratinjau→simpan, chip filter, tabel, log ekspor); `admin.mock.ts`/`admin.api.ts`/`admin.ts` nambah `existingAccountEmails`, `commitAccountImport`, `listAccountExports`, `addAccountExportLog`; template contoh `frontend/public/templates/template-akun.csv`; layar baru `views/admin/AkunImportExportView.vue` + rute `/akun/impor-ekspor` (tab via query `?tab=ekspor`), tombol "Impor CSV"/"Ekspor CSV" ditambah di toolbar `AkunView.vue`; guard rute `router/index.ts` diperluas dari `path === '/akun'` ke `path.startsWith('/akun/')` juga (tetap ADMIN only). Tes baru `frontend/tests/unit/account-import-rules.test.ts` (3 tes: valid/ganda/peran salah, kolom wajib hilang, password pendek). `vue-tsc --noEmit` lulus; semua tes unit existing (backend 31, frontend 71+3) tetap lulus. Belum dites: jalur database penuh (butuh Docker test DB) dan E2E (pola `csv.db.test.ts`/`accounts.db.test.ts` kalau mau nambah tes integrasi).
+Sekalian: tabel Akun (`AkunView.vue`) sekarang default diurutkan status ACTIVE → MUST_CHANGE_PASSWORD → INACTIVE (`statusRank`, sort stabil, kolom header tetap `sortable: false`, belum ada toggle sort manual oleh user).
+**Bugfix tampilan Login (belum di-commit):** `components/LabeledField.vue` (komponen input shared, dipakai Login, AccountFormDialog, CheckInSchoolStep, SchoolListView, ComponentGallery, dll) kena perubahan tak sengaja nambah `width: 500px` ke `.labeled-field` (plus format script jadi semicolon/double-quote, beda konvensi repo) — field jadi melebar keluar `.login__card` (482px). Sudah diperbaiki: `width: 500px` dihapus, format script dibalikin; `git diff` pada file ini sekarang kosong (identik HEAD), `vue-tsc --noEmit` lulus.
 2. B2 audit log + transaksi, B3 auth (cookie httpOnly, RBAC, hapus kode sementara `?as=`/`session.ts`/`?preview=galat`/galeri), B4 akun + master, B5 sekolah + kontrak, B6 penugasan + target, B7 check-in/out + foto, B8 dashboard, B9 impor/ekspor CSV, B10 audit keamanan + Docker. Detail dan layar yang hidup per tahap ada di rencana.
 3. Dokumen yang menunggu persetujuan user untuk disesuaikan: kalimat "wajib ganti password saat login pertama" di `docs/PLAN.md` (Akses) dan `CLAUDE.md` (Autentikasi); baris "Status: MVP, belum ada kode" di CLAUDE.md.
 4. Isi `docs/api-reference.md` per tahap sebelum menulis endpoint. Perbarui peta codebase di akhir tahap (`python3 tools/codebase-map.py`).
@@ -65,7 +69,7 @@ Frontend harus jalan (`cd frontend && npm run dev`, port 3010). Ganti peran lewa
 - Node 24 lewat fnm: `export PATH=/opt/homebrew/bin:$PATH` lalu `fnm exec --using=24 <perintah>` (shell default Node 22).
 - Frontend: `cd frontend && npm run dev` (port 3010). Backend: `cd backend && npm run dev` (port 3011).
 - Ganti peran saat dev: `?as=admin|manager|agent` di URL. Galeri komponen: `/_komponen`.
-- Database lokal: container Docker `sa-visit-mysql` (port 3308), kredensial di `backend/.env` (di-gitignore). Seed: `cd backend && npm run seed` (password semua akun `Password123!`).
+- Database lokal: MySQL port 3307, kredensial di `backend/.env` (di-gitignore). Seed: `cd backend && npm run seed` (password semua akun `SkollaEdu`).
 - Tes: `cd frontend && npm test`, `npm run typecheck`, `npm run build`; E2E `.venv/bin/pytest tests/e2e` (frontend harus jalan di 3010).
 
 ## Pola kerja sub-agent (pelajaran)
@@ -81,6 +85,15 @@ Frontend harus jalan (`cd frontend && npm run dev`, port 3010). Ganti peran lewa
 - Sisa selisih kecil: tombol halaman berikutnya abu saat hanya satu halaman, scrim dialog lebih terang, posisi tombol tutup dialog sedikit berbeda (DialogShell milik admin), jam "sekarang" tiruan dikunci ke Sabtu 14 Nov 2026 10.40 WIB, state tiruan hilang saat reload.
 - Dashboard manager: filter agent hanya memengaruhi peringkat, kontribusi, perlu perhatian, sekolah belum dikunjungi, dan tabel (StatCard dan grafik tetap data tiruan semua agent). Status "Sesuai target" per agent adalah data (`met`), bukan dibandingkan dengan persentase: itu sengaja, mengikuti aturan "kontrak yang sudah diputuskan" di PLAN.md (Ayu 62,7% tetap Sesuai target di Figma).
 - Tombol panah periode di Beranda agent belum berfungsi; ekspor CSV hanya UI.
+
+## Log update
+Belum di-commit. Kode urut per sesi/perubahan; detail lengkap tiap kode ada di paragraf terkait di atas (bagian "Langkah berikutnya").
+
+| Kode update | Informasi yang diupdate |
+|---|---|
+| UPD-01 | Impor/ekspor CSV akun (perluasan B9): backend `account-csv.service.ts` (template, preview, commit, validasi, audit per baris), `buildAccountsCsv` di `export.service.ts`, route admin-only `/import/accounts/*` dan `/export/accounts` di `csv.routes.ts`; frontend `account-import-rules.ts`, `AccountImportPanel.vue`, `AccountExportPanel.vue`, perluasan `admin.mock.ts`/`admin.api.ts`/`admin.ts`, template `template-akun.csv`, layar `AkunImportExportView.vue` + rute `/akun/impor-ekspor`, tombol Impor/Ekspor CSV di `AkunView.vue`; tes baru `account-import-rules.test.ts` |
+| UPD-02 | Tabel Akun (`AkunView.vue`) default diurutkan status ACTIVE → MUST_CHANGE_PASSWORD → INACTIVE (`statusRank`, sort stabil) |
+| UPD-03 | Bugfix tampilan Login: `components/LabeledField.vue` kena perubahan tak sengaja (`width: 500px` + format semicolon/double-quote) yang bikin field melebar keluar `.login__card`; dikembalikan ke semula, `git diff` kosong |
 
 ## Catatan
 - `HANDOFF.md` ini belum di-commit; tanya user sebelum meng-commit.

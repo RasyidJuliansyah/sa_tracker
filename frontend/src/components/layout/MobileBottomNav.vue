@@ -28,6 +28,8 @@ const active = (item: NavItem, isActive: boolean) => isActive || (item.alsoActiv
   z-index: 1000;
   display: flex;
   height: 64px;
+  max-width: 800px;
+  margin: 0 auto;
   background: rgb(var(--v-theme-surface));
   border-top: 1px solid rgb(var(--v-theme-border));
 }

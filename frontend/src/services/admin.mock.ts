@@ -1,5 +1,7 @@
 // Lapisan layanan admin. Sekarang mengembalikan data tiruan dalam memori; nanti diganti panggilan API
 // tanpa mengubah layar yang membacanya.
+import type { AccountImportRow } from '@/components/admin/account-import-rules'
+import { asZone } from '@/components/admin/account-import-rules'
 import {
   initialAccounts, initialAudit, initialLevels, initialPackages,
   type AccountRole, type AccountStatus, type MockAccount, type MockAuditEntry, type MockMasterItem,
@@ -10,21 +12,16 @@ let accounts: MockAccount[] = initialAccounts.map((a) => ({ ...a }))
 let levels: MockMasterItem[] = initialLevels.map((a) => ({ ...a }))
 let packages: MockMasterItem[] = initialPackages.map((a) => ({ ...a }))
 const audit: MockAuditEntry[] = initialAudit
+export interface MockAccountExportLog { id: number; at: string; actor: string; kind: string; filter: string; rows: number }
+let accountExports: MockAccountExportLog[] = []
 
 export interface AccountInput { name: string; email: string; role: AccountRole; timezone: IndoTimezone; password?: string }
 export interface AccountFilter { query: string; role: AccountRole | null; status: AccountStatus | null }
 export type MasterKind = 'level' | 'package'
 
-const PASSWORD_CHARS = 'ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789'
-const PASSWORD_SYMBOLS = '#@$%&*'
-
-/** Password sementara 8 karakter, tanpa karakter yang mirip (0/O, 1/l/I). */
+/** Password sementara default untuk semua akun baru dan reset password. */
 export function generateTempPassword(): string {
-  const pick = (set: string) => set[Math.floor(Math.random() * set.length)]
-  const chars = Array.from({ length: 6 }, () => pick(PASSWORD_CHARS))
-  chars.splice(2, 0, pick(PASSWORD_SYMBOLS))
-  chars.splice(5, 0, String(2 + Math.floor(Math.random() * 8)))
-  return chars.join('')
+  return 'SkollaEdu'
 }
 
 export function isValidEmail(email: string): boolean {
@@ -66,6 +63,32 @@ export async function resetAccountPassword(id: number, tempPassword: string): Pr
 
 export function emailExists(email: string, exceptId?: number): boolean {
   return accounts.some((a) => a.email.toLowerCase() === email.trim().toLowerCase() && a.id !== exceptId)
+}
+
+// Impor/ekspor CSV akun (dev:mock). Mode API langsung memanggil server dari panel.
+export const existingAccountEmails = (): Set<string> => new Set(accounts.map((a) => a.email))
+export async function commitAccountImport(rows: AccountImportRow[]): Promise<{ created: number; updated: number }> {
+  let created = 0, updated = 0
+  for (const r of rows.filter((x) => x.ok)) {
+    const existing = accounts.find((a) => a.email === r.email)
+    if (existing) {
+      accounts = accounts.map((a) => (a.id === existing.id ? { ...a, name: r.name, role: r.role as AccountRole, timezone: asZone(r.timezone) } : a))
+      updated++
+    } else {
+      accounts = [...accounts, {
+        id: Math.max(0, ...accounts.map((a) => a.id)) + 1, name: r.name, email: r.email, role: r.role as AccountRole,
+        timezone: asZone(r.timezone), status: 'MUST_CHANGE_PASSWORD', lastLoginLabel: 'Belum pernah login',
+      }]
+      created++
+    }
+  }
+  return { created, updated }
+}
+export async function listAccountExports(): Promise<MockAccountExportLog[]> {
+  return [...accountExports]
+}
+export async function addAccountExportLog(kind: string, filter: string, rows: number): Promise<void> {
+  accountExports = [{ id: Math.max(0, ...accountExports.map((e) => e.id)) + 1, at: new Date().toISOString(), actor: 'Fajar Hidayat', kind, filter, rows }, ...accountExports]
 }
 
 function bucket(kind: MasterKind): MockMasterItem[] {

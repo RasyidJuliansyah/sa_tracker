@@ -38,11 +38,8 @@ describe('csv', () => {
   })
 })
 describe('password sementara', () => {
-  it('panjang 12 dengan huruf besar, kecil, angka; acak', () => {
-    const a = generateTempPassword(), b = generateTempPassword()
-    expect(a).toHaveLength(12)
-    expect(a).toMatch(/[A-Z]/); expect(a).toMatch(/[a-z]/); expect(a).toMatch(/\d/)
-    expect(a).not.toBe(b)
+  it('default tetap SkollaEdu', () => {
+    expect(generateTempPassword()).toBe('SkollaEdu')
   })
 })
 

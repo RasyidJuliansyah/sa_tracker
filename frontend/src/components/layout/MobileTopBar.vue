@@ -36,6 +36,8 @@ const session = useSessionStore()
   align-items: center;
   gap: 8px;
   width: 100%;
+  max-width: 800px;
+  margin: 0 auto;
   padding: 0 16px;
 }
 .mobile-bar__back {

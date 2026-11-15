@@ -1,25 +1,43 @@
 <script setup lang="ts">
-import BrandLogo from '@/components/BrandLogo.vue'
-import { useRoute } from 'vue-router'
-import type { NavItem } from '@/utils/navigation'
+import BrandLogo from "@/components/BrandLogo.vue";
+import { useRoute } from "vue-router";
+import type { NavItem } from "@/utils/navigation";
 
 // Sidebar desktop (Figma: Sidebar/Manager dan Sidebar/Admin). Lebar 220px.
-defineProps<{ items: NavItem[] }>()
-defineEmits<{ logout: [] }>()
+defineProps<{ items: NavItem[] }>();
+defineEmits<{ logout: [] }>();
 
-const route = useRoute()
-const active = (item: NavItem, isActive: boolean) => isActive || (item.alsoActiveFor ?? []).some((p) => route.path.startsWith(p))
+const route = useRoute();
+const active = (item: NavItem, isActive: boolean) =>
+  isActive || (item.alsoActiveFor ?? []).some((p) => route.path.startsWith(p));
 </script>
 
 <template>
-  <v-navigation-drawer permanent width="220" class="sidebar" aria-label="Navigasi utama">
+  <v-navigation-drawer
+    permanent
+    width="220"
+    class="sidebar"
+    aria-label="Navigasi utama"
+  >
     <div class="sidebar__head">
       <BrandLogo :height="27.491" />
       <p class="sidebar__app">Visit Tracker</p>
     </div>
     <nav class="sidebar__nav">
-      <router-link v-for="item in items" :key="item.to" v-slot="{ href, navigate, isActive }" :to="item.to" custom>
-        <a :href="href" class="sidebar__item" :class="{ 'sidebar__item--active': active(item, isActive) }" :aria-current="active(item, isActive) ? 'page' : undefined" @click="navigate">
+      <router-link
+        v-for="item in items"
+        :key="item.to"
+        v-slot="{ href, navigate, isActive }"
+        :to="item.to"
+        custom
+      >
+        <a
+          :href="href"
+          class="sidebar__item"
+          :class="{ 'sidebar__item--active': active(item, isActive) }"
+          :aria-current="active(item, isActive) ? 'page' : undefined"
+          @click="navigate"
+        >
           <v-icon :icon="item.icon" size="22" />
           <span>{{ item.label }}</span>
         </a>
@@ -42,8 +60,8 @@ const active = (item: NavItem, isActive: boolean) => isActive || (item.alsoActiv
 .sidebar__head {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  padding: 8px 0 8px;
+  align-items: flex-start;
+  padding: 8px 16px;
 }
 .sidebar__head > :first-child {
   padding: 8px;
