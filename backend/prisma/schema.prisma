@@ -37,6 +37,9 @@ enum AuditAction {
   PASSWORD_CHANGE
   IMPORT
   EXPORT
+  APPROVE
+  REJECT
+  CANCEL
 }
 
 enum ContractType {
@@ -47,6 +50,15 @@ enum ContractType {
 enum VisitStatus {
   ONGOING
   DONE
+}
+
+// Status rencana kunjungan yang DISIMPAN. Selesai/Terlewat/Kedaluwarsa dihitung
+// (tidak disimpan) dari tanggal dan kunjungan terhubung, lihat docs/prd-rencana-kunjungan.md
+enum VisitPlanStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  CANCELLED
 }
 
 model User {
@@ -68,6 +80,9 @@ model User {
   auditLogs           AuditLog[]
   contractsCreated    SchoolContract[]   @relation("ContractCreatedBy")
   retentionTargetsSet RetentionTarget[]
+  visitPlans          VisitPlan[]        @relation("PlanAgent")
+  visitPlansCreated   VisitPlan[]        @relation("PlanCreatedBy")
+  visitPlansDecided   VisitPlan[]        @relation("PlanDecidedBy")
   createdAt           DateTime           @default(now()) @map("created_at")
   updatedAt           DateTime           @updatedAt @map("updated_at")
 
@@ -124,6 +139,7 @@ model School {
   visits               Visit[]
   assignments          SchoolAssignment[]
   contracts            SchoolContract[]
+  visitPlans           VisitPlan[]
   createdAt            DateTime           @default(now()) @map("created_at")
   updatedAt            DateTime           @updatedAt @map("updated_at")
 
@@ -220,6 +236,10 @@ model Visit {
   checkOutAt      DateTime?    @map("check_out_at")
   report          String?      @db.Text
   status          VisitStatus  @default(ONGOING)
+  // Rencana yang terhubung ke kunjungan ini (diisi saat check-in bila ada rencana
+  // terjadwal agent untuk sekolah+tanggal yang sama). Unik: satu kunjungan per rencana.
+  planId          Int?         @unique @map("plan_id")
+  plan            VisitPlan?   @relation(fields: [planId], references: [id])
   createdAt       DateTime     @default(now()) @map("created_at")
   updatedAt       DateTime     @updatedAt @map("updated_at")
 
@@ -227,6 +247,38 @@ model Visit {
   @@index([schoolId, checkInAt])
   @@index([checkInAt])
   @@map("visits")
+}
+
+// Rencana kunjungan (jadwal dari manager atau rencana buatan agent). Status
+// Selesai/Terlewat/Kedaluwarsa TIDAK disimpan di sini; dihitung dari plan_date dan
+// kunjungan terhubung. Lihat docs/prd-rencana-kunjungan.md.
+model VisitPlan {
+  id           Int             @id @default(autoincrement()) @map("plan_id")
+  agentId      Int             @map("agent_id")
+  agent        User            @relation("PlanAgent", fields: [agentId], references: [id])
+  schoolId     Int             @map("school_id")
+  school       School          @relation(fields: [schoolId], references: [id])
+  // Tanggal kunjungan dalam WIB (disimpan sebagai DATE)
+  planDate     DateTime        @map("plan_date") @db.Date
+  purpose      String          @db.VarChar(255)
+  status       VisitPlanStatus @default(PENDING)
+  // createdById == agentId berarti "Rencana saya"; selain itu "Jadwal dari manager"
+  createdById  Int             @map("created_by_id")
+  createdBy    User            @relation("PlanCreatedBy", fields: [createdById], references: [id])
+  // Pemutus persetujuan/penolakan. Kosong untuk rencana yang terjadwal lewat penugasan
+  decidedById  Int?            @map("decided_by_id")
+  decidedBy    User?           @relation("PlanDecidedBy", fields: [decidedById], references: [id])
+  decidedAt    DateTime?       @map("decided_at")
+  // Wajib diisi saat REJECTED (alasan penolakan, terlihat oleh agent)
+  decisionNote String?         @map("decision_note") @db.VarChar(255)
+  visit        Visit?
+  createdAt    DateTime        @default(now()) @map("created_at")
+  updatedAt    DateTime        @updatedAt @map("updated_at")
+
+  @@index([agentId, planDate])
+  @@index([schoolId, planDate])
+  @@index([status, planDate])
+  @@map("visit_plans")
 }
 
 // Log riwayat perubahan data transaksi. Hanya ditambah, tidak pernah diubah
