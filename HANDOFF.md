@@ -95,5 +95,13 @@ Belum di-commit. Kode urut per sesi/perubahan; detail lengkap tiap kode ada di p
 | UPD-02 | Tabel Akun (`AkunView.vue`) default diurutkan status ACTIVE → MUST_CHANGE_PASSWORD → INACTIVE (`statusRank`, sort stabil) |
 | UPD-03 | Bugfix tampilan Login: `components/LabeledField.vue` kena perubahan tak sengaja (`width: 500px` + format semicolon/double-quote) yang bikin field melebar keluar `.login__card`; dikembalikan ke semula, `git diff` kosong |
 
+## Langkah berikutnya (disetujui user, belum dikerjakan)
+Hapus SEMUA data dummy/contoh, ganti dengan data asli Skolla Edtech. Scope disetujui user: **keduanya** —
+1. `backend/prisma/seed.ts` (sekolah A–G, kontrak, retention target, user Citra/Dimas/Eko, dll) diganti data sekolah/kontrak/akun asli Skolla.
+2. `frontend/src/mocks/*.ts` (dashboard.ts, manager.ts, school.ts, dll, dipakai mode `dev:mock`) juga diganti data asli.
+
+Konsekuensi: semua E2E Playwright di `tests/e2e/*.py` (test_admin_akun, test_agent_flow, test_manager_dashboard, test_manager_screens, test_school_*, dll — lihat daftar lengkap lewat `ls tests/e2e/`) saat ini asserting nilai-nilai dummy spesifik (nama sekolah A/B/C, NPSN 1000000x, nama agent Citra/Dimas/Eko, angka retention tertentu, dll) dan PERLU DITULIS ULANG total mengikuti data baru. Jangan kaget kalau suite E2E merah total sampai ditulis ulang.
+Belum ada detail data asli Skolla (nama sekolah, NPSN, kontrak, nama akun) yang diberikan user — tanya/minta dulu di awal sesi sebelum mulai edit.
+
 ## Catatan
-- `HANDOFF.md` ini belum di-commit; tanya user sebelum meng-commit.
+- Commit `1f058e8` (15 Nov 2026) sudah di-push ke `origin/main`. Working tree bersih per akhir sesi ini.
