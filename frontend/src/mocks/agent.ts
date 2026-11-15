@@ -33,7 +33,7 @@ export interface MockSchool {
 // check-in/check-out agent), bukan di-hardcode di sini.
 export const mockSchools: MockSchool[] = []
 
-export const agentProfile: AgentProfile = { name: 'Citra Agent', timezone: 'WIB' }
+export const agentProfile: AgentProfile = { name: 'Akhmad Mukhibun', timezone: 'WIB' }
 
 /** Jam "sekarang" dev:mock; dulu dibuat tetap supaya cocok Figma. */
 export const MOCK_NOW_ISO = new Date().toISOString()

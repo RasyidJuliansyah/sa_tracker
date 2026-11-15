@@ -36,9 +36,12 @@ export interface MockAuditEntry {
   changes: AuditChange[]
 }
 
-// Sengaja kosong: akun login asli dibuat lewat aplikasi (Akun > Tambah akun) oleh Skolla Edtech,
-// bukan di-hardcode di mock lagi. Sesuai backend/prisma/seed.ts (seed tidak lagi buat akun).
-export const initialAccounts: MockAccount[] = []
+// Akun login awal dev:mock, selaras dengan backend/prisma/seed.ts (password: SkollaEdu).
+export const initialAccounts: MockAccount[] = [
+  { id: 1, name: 'Admin', email: 'admin@skolla.education', role: 'ADMIN', timezone: 'WIB', status: 'ACTIVE', lastLoginLabel: 'Belum pernah login' },
+  { id: 2, name: 'Syifa Mahmudah', email: 'syifa@skolla.education', role: 'MANAGER', timezone: 'WIB', status: 'ACTIVE', lastLoginLabel: 'Belum pernah login' },
+  { id: 3, name: 'Akhmad Mukhibun', email: 'akhmad@skolla.education', role: 'AGENT', timezone: 'WIB', status: 'ACTIVE', lastLoginLabel: 'Belum pernah login' },
+]
 
 // Master data, selaras dengan backend/prisma/seed.ts. schoolCount 0 sampai ada sekolah asli.
 export const initialLevels: MockMasterItem[] = [

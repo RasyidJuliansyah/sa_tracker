@@ -7,7 +7,7 @@ export interface SessionUser { id: number; name: string; email: string; role: Ro
 
 /** Mode tiruan untuk tes UI: hanya saat dev dan VITE_MOCK_AUTH=1. Hapus setelah semua layar memakai API. */
 export const MOCK_AUTH = import.meta.env.DEV && import.meta.env.VITE_MOCK_AUTH === '1'
-const MOCK_NAMES: Record<Role, string> = { ADMIN: 'Fajar Hidayat', MANAGER: 'Rina Nurhayati', AGENT: 'Dimas Saputra' }
+const MOCK_NAMES: Record<Role, string> = { ADMIN: 'Admin', MANAGER: 'Syifa Mahmudah', AGENT: 'Akhmad Mukhibun' }
 
 export const homeFor = (role: Role) => ({ ADMIN: '/akun', MANAGER: '/dashboard', AGENT: '/agent' })[role]
 
