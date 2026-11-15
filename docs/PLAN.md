@@ -1,18 +1,18 @@
 # SA Visit Tracker
 
-Status: draf revisi 14. Siap mulai coding.
+Status: draf revisi 15. Revisi 15 menambah rencana kunjungan dan membatasi check-in; rinciannya di `docs/prd-rencana-kunjungan.md`.
 
 ## Masalah
 
-Laporan kunjungan agent service account ke sekolah pelanggan LMS Skolla belum tercatat di satu tempat. Manager jadi sulit memastikan siapa berkunjung ke sekolah mana, jam berapa, berapa lama, dan apa hasilnya.
+Laporan kunjungan agent service account ke sekolah pelanggan LMS Skolla belum tercatat di satu tempat. Manager jadi sulit memastikan siapa berkunjung ke sekolah mana, jam berapa, berapa lama, dan apa hasilnya. Manager juga belum bisa melihat rencana kunjungan sebelum kunjungan terjadi, dan belum bisa membatasi agent supaya hanya berkunjung ke sekolah yang menjadi tanggung jawabnya.
 
 ## Pengguna
 
-**Admin.** Satu-satunya peran yang membuat akun. Admin mengatur peran dan zona waktu pengguna, mengelola master jenjang dan paket, mengelola data sekolah klien Skolla Edtech (input satu per satu atau impor CSV) beserta kontraknya, menugaskan sekolah ke agent, mengatur persentase target retention, dan melihat audit log.
+**Admin.** Satu-satunya peran yang membuat akun. Admin mengatur peran dan zona waktu pengguna, mengelola master jenjang dan paket, mengelola data sekolah klien Skolla Edtech (input satu per satu atau impor CSV) beserta kontraknya, menugaskan sekolah ke agent, membuat jadwal kunjungan agent dan memutus pengajuan kunjungan, mengatur persentase target retention, dan melihat audit log.
 
-**Manager service account.** Memantau dashboard aktivitas dan retention semua agent, membuka laporan per kunjungan, mengubah data sekolah, mencatat kontrak dan perpanjangan, menugaskan sekolah, mengatur persentase target retention, mengimpor dan mengekspor CSV, mengubah akun agent, dan melihat audit log.
+**Manager service account.** Memantau dashboard aktivitas dan retention semua agent, membuka laporan per kunjungan, mengubah data sekolah, mencatat kontrak dan perpanjangan, menugaskan sekolah, membuat jadwal kunjungan untuk agent, menyetujui atau menolak pengajuan kunjungan ke sekolah di luar tugas agent, mengatur persentase target retention, mengimpor dan mengekspor CSV, mengubah akun agent, dan melihat audit log.
 
-**Agent service account.** Melakukan check-in dan check-out dari HP saat berkunjung ke sekolah, memantau dashboard aktivitas dan retention-nya sendiri, dan melihat laporan serta kontrak sekolah yang ditugaskan kepadanya.
+**Agent service account.** Membuat rencana kunjungannya sendiri, mengajukan kunjungan ke sekolah di luar tugasnya, melakukan check-in dan check-out dari HP saat berkunjung ke sekolah yang ditugaskan kepadanya atau yang rencananya sudah terjadwal, memantau dashboard aktivitas dan retention-nya sendiri, dan melihat laporan serta kontrak sekolah yang ditugaskan kepadanya.
 
 ## MVP (versi pertama)
 
@@ -31,26 +31,37 @@ Laporan kunjungan agent service account ke sekolah pelanggan LMS Skolla belum te
 - [ ] **Ekspor data ke CSV** dengan filter yang sedang aktif: data sekolah (termasuk kontrak berjalan dan status perpanjangannya), riwayat kontrak beserta retention-nya, dan rekap kunjungan. Setiap ekspor tercatat di audit log.
 
 ### Penugasan dan target retention (admin dan manager)
-- [ ] **Tugaskan sekolah ke agent.** Penugasan tidak wajib: sekolah boleh tanpa agent, dan agent tetap bisa check-in di sekolah yang tidak ditugaskan kepadanya. Satu agent boleh memegang banyak sekolah. Untuk MVP satu sekolah dipegang paling banyak satu agent, tetapi data dan layarnya disiapkan untuk lebih dari satu (batasnya satu konstanta). Saat dipindah ke agent lain, riwayat penugasan lama tetap tersimpan.
+- [ ] **Tugaskan sekolah ke agent.** Penugasan tidak wajib: sekolah boleh tanpa agent. Penugasan menentukan di sekolah mana agent boleh check-in tanpa persetujuan; sekolah lain butuh rencana yang terjadwal (lihat Rencana kunjungan). Satu agent boleh memegang banyak sekolah. Untuk MVP satu sekolah dipegang paling banyak satu agent, tetapi data dan layarnya disiapkan untuk lebih dari satu (batasnya satu konstanta). Saat dipindah ke agent lain, riwayat penugasan lama tetap tersimpan.
 - [ ] **Daftar sekolah per agent dan sekolah tanpa agent**, supaya manager bisa melihat sekolah mana yang belum ada penanggung jawabnya.
 - [ ] **Persentase target retention per tahun.** Default 65%. Admin dan manager bisa mengubahnya untuk tahun tertentu. Aturan hitungnya di bagian Retention dan target.
 
+### Rencana kunjungan (revisi 15)
+Rincian kebutuhan, status, edge case, dan usulan tabel `visit_plans` ada di `docs/prd-rencana-kunjungan.md`.
+- [ ] **Jadwal dari manager** (admin dan manager). Membuat jadwal kunjungan untuk satu agent: sekolah, tanggal, dan tujuan. Jadwal dari manager langsung terjadwal, termasuk untuk sekolah yang tidak ditugaskan kepada agent itu.
+- [ ] **Rencana buatan agent.** Agent membuat rencana kunjungannya sendiri di luar jadwal dari manager. Rencana ke sekolah yang ditugaskan kepadanya langsung terjadwal. Rencana ke sekolah lain menjadi pengajuan yang menunggu persetujuan manager. Hanya sekolah yang sudah ada di data sekolah yang bisa dipilih.
+- [ ] **Persetujuan pengajuan** (admin dan manager). Manager melihat profil sekolah, agent yang memegangnya, kontrak berjalan, kunjungan terakhir, dan tujuan kunjungan dari agent, lalu menyetujui atau menolak dengan alasan. Persetujuan hanya memberi izin kunjungan untuk rencana itu, pada tanggalnya. Penugasan dan retention tidak berubah, dan kunjungan berikutnya ke sekolah itu perlu pengajuan baru.
+- [ ] **Status rencana.** Menunggu persetujuan, Terjadwal, Ditolak, dan Dibatalkan disimpan. Selesai, Terlewat, dan Kedaluwarsa dihitung dari tanggal dan kunjungan, tidak disimpan. Selesai baru tercapai setelah agent check-out di tempat klien (kunjungan berstatus DONE), bukan saat check-in; agent lalu bisa menuju kunjungan berikutnya kalau ada. Selama kunjungan masih berlangsung (ONGOING), rencana tetap tampil Terjadwal.
+- [ ] **Pembatalan.** Agent membatalkan rencananya sendiri. Jadwal dari manager hanya dibatalkan manager atau admin. Rencana yang sudah punya kunjungan tidak bisa dibatalkan.
+- [ ] **Ikut penugasan.** Saat sekolah dilepas dari agent, rencana buatan agent itu yang terjadwal karena penugasan kembali menunggu persetujuan. Saat sekolah ditugaskan kepadanya, pengajuannya yang masih menunggu menjadi terjadwal.
+
 ### Audit log (admin dan manager)
-- [ ] **Riwayat perubahan.** Setiap perubahan data transaksi (akun, sekolah, kontrak, penugasan, target retention, master data, check-in, check-out), setiap impor dan ekspor CSV, serta setiap login tercatat dengan pelaku, waktu, nilai sebelum dan sesudah. Bisa difilter per jenis data, pelaku, dan tanggal. Di halaman sekolah ada tab Riwayat perubahan untuk sekolah itu.
+- [ ] **Riwayat perubahan.** Setiap perubahan data transaksi (akun, sekolah, kontrak, penugasan, target retention, master data, rencana kunjungan beserta persetujuan dan pembatalannya, check-in, check-out), setiap impor dan ekspor CSV, serta setiap login tercatat dengan pelaku, waktu, nilai sebelum dan sesudah. Bisa difilter per jenis data, pelaku, dan tanggal. Di halaman sekolah ada tab Riwayat perubahan untuk sekolah itu.
 
 ### Halaman manager
 - [ ] **Dashboard aktivitas agent.** Lihat bagian Dashboard.
 - [ ] **Kelola akun agent.** Mengubah data akun berperan agent (nama, zona waktu, status aktif). Membuat akun baru tetap hanya oleh admin.
 - [ ] **Rekap kunjungan.** Tabel berisi tanggal, hari, nama agent, sekolah, jam check-in, jam check-out, durasi, dan status. Bisa difilter per tanggal, agent, dan sekolah.
-- [ ] **Detail kunjungan.** Foto, laporan, dan lokasi check-in dalam bentuk tautan ke Google Maps.
+- [ ] **Detail kunjungan.** Foto, laporan, lokasi check-in dalam bentuk tautan ke Google Maps, dan rencana yang terhubung (atau "Tanpa rencana").
+- [ ] **Jadwal kunjungan.** Tab Menunggu persetujuan (jumlahnya tampil di menu samping) dan Semua rencana, bisa difilter per agent, sekolah, tanggal, status, dan sumber. Tombol Buat jadwal. Admin melihat halaman yang sama.
 - [ ] **Halaman sekolah.** Data sekolah, empat tanggal kerja sama, kontrak berjalan (periode, nilai kontrak, status perpanjangan), riwayat kontrak beserta retention setiap perpanjangan, agent yang ditugaskan, dan riwayat kunjungan terbaru di atas.
 
 ### Halaman agent
 - [ ] **Dashboard aktivitas sendiri.** Lihat bagian Dashboard.
-- [ ] **Check-in.** Agent memilih sekolah (sekolah yang ditugaskan kepadanya tampil paling atas), mengambil foto, lalu menekan Check-in. Sistem mencatat jam dari server serta koordinat GPS dan akurasinya. Check-in tanpa foto atau tanpa izin lokasi ditolak dengan pesan yang jelas.
+- [ ] **Rencana kunjungan.** Daftar rencana mendatang (jadwal dari manager dan rencana sendiri) beserta riwayatnya, dan tombol Buat rencana. Beranda menampilkan rencana hari ini.
+- [ ] **Check-in.** Agent memilih sekolah dari sekolah yang boleh dikunjungi hari ini: sekolah dengan rencana terjadwal hari ini (paling atas) dan sekolah yang ditugaskan kepadanya. Sekolah lain tidak bisa dipilih; agent diarahkan untuk mengajukan rencana. Server menolak check-in di luar aturan ini. Agent lalu mengambil foto dan menekan Check-in. Sistem mencatat jam dari server serta koordinat GPS dan akurasinya. Check-in tanpa foto atau tanpa izin lokasi ditolak dengan pesan yang jelas.
 - [ ] **Check-out dengan laporan.** Agent menulis laporan teks bebas tentang hasil kunjungan dan kondisi sekolah, lalu menekan Check-out. Check-out tanpa laporan ditolak.
 - [ ] **Sekolah saya.** Daftar sekolah yang ditugaskan kepada agent. Setiap sekolah menampilkan data sekolah, kontrak berjalan dan status perpanjangannya, riwayat kontrak beserta retention-nya, serta semua laporan kunjungan agent itu ke sekolah tersebut.
-- [ ] **Riwayat kunjungan sendiri.** Semua kunjungan agent itu, termasuk ke sekolah yang tidak ditugaskan kepadanya, terbaru di atas.
+- [ ] **Riwayat kunjungan sendiri.** Semua kunjungan agent itu, termasuk ke sekolah yang tidak ditugaskan kepadanya lewat rencana yang terjadwal, terbaru di atas.
 
 ## Dashboard
 
@@ -61,8 +72,10 @@ Manager melihat dashboard untuk semua agent, dengan pilihan satu atau beberapa a
 **Isi yang tidak ikut pilihan periode (tahunan):**
 - Retention tahun berjalan: nilai perpanjangan yang sudah ditandatangani dibanding target, persentase retention, progress bar, dan label status (lihat bagian Retention dan target)
 - Daftar kontrak yang sudah berakhir tahun ini tetapi belum diperpanjang, dan kontrak yang akan berakhir dalam waktu dekat
+- Untuk manager: jumlah pengajuan kunjungan yang menunggu persetujuan
 
 **Isi per periode:**
+- Jumlah rencana kunjungan yang terlaksana dan yang terlewat
 - Nilai perpanjangan yang ditandatangani pada periode itu, dengan perubahan dibanding periode sebelumnya
 - Jumlah kunjungan selesai dan kunjungan yang masih berlangsung
 - Jumlah sekolah berbeda yang dikunjungi
@@ -83,22 +96,27 @@ Manager melihat dashboard untuk semua agent, dengan pilihan satu atau beberapa a
 | Impor CSV sekolah | Ya | Ya | Tidak |
 | Ekspor CSV | Ya | Ya | Tidak |
 | Mengubah data sekolah | Ya | Ya | Tidak |
-| Melihat data sekolah | Semua | Semua | Semua, untuk check-in |
+| Melihat data sekolah | Semua | Semua | Profil dasar semua sekolah (tanpa nilai kontrak), untuk memilih sekolah di rencana |
 | Mencatat kontrak dan perpanjangan | Ya | Ya | Tidak |
 | Melihat nilai kontrak dan retention | Semua sekolah | Semua sekolah | Sekolah yang ditugaskan kepadanya |
 | Menugaskan sekolah | Ya | Ya | Tidak |
+| Membuat jadwal kunjungan untuk agent | Ya | Ya | Tidak |
+| Membuat rencana kunjungan sendiri | Tidak | Tidak | Ya |
+| Menyetujui atau menolak pengajuan kunjungan | Ya | Ya | Tidak |
+| Melihat rencana kunjungan | Semua | Semua | Milik sendiri |
+| Check-in dan check-out | Tidak | Tidak | Sekolah yang ditugaskan kepadanya, atau sekolah dengan rencana terjadwal hari itu |
 | Mengatur persentase target retention | Ya | Ya | Tidak |
 | Dashboard | Semua agent | Semua agent | Diri sendiri |
 | Laporan kunjungan dan foto | Semua | Semua | Milik sendiri |
 | Audit log (perubahan data, impor, ekspor, login) | Semua | Semua | Tidak |
 
-Baris yang belum pernah dibahas dan aku isi sendiri: persentase target retention bisa diatur admin dan manager, dan agent tidak bisa mengekspor.
+Baris yang belum pernah dibahas dan aku isi sendiri: persentase target retention bisa diatur admin dan manager, dan agent tidak bisa mengekspor. Revisi 15: admin ikut bisa membuat jadwal dan memutus pengajuan kunjungan (asumsi, belum dikonfirmasi).
 
 ## Aturan zona waktu
 
 - Zona waktu yang dipakai hanya WIB, WITA, dan WIT. Setiap akun dan setiap sekolah punya zona waktu yang diatur admin.
 - Waktu disimpan dalam UTC di database.
-- Tanggal dan hari di rekap, serta periode di dashboard, mengikuti WIB.
+- Tanggal dan hari di rekap, periode di dashboard, serta tanggal rencana kunjungan mengikuti WIB.
 - Jam check-in dan check-out ditampilkan dalam zona waktu agent yang berkunjung, dengan labelnya, misalnya 09.15 WITA. Zona agent disalin ke data kunjungan saat check-in.
 
 ## Retention dan target
@@ -142,7 +160,8 @@ Ada dua jenis log, dengan tugas berbeda:
 
 - Mode offline untuk sekolah yang sinyalnya lemah
 - Validasi jarak (geofence) antara lokasi check-in dan koordinat sekolah
-- Jadwal atau rencana kunjungan dari manager
+- Jadwal kunjungan berulang (misalnya setiap Senin) dan ekspor CSV rencana kunjungan
+- Pengajuan sekolah baru yang belum ada di data sekolah oleh agent
 - Ekspor ke Excel (.xlsx) atau PDF (MVP: CSV)
 - Notifikasi WhatsApp atau email, termasuk pengingat kerja sama yang akan berakhir
 - Sinkronisasi otomatis dengan database LMS Skolla
@@ -159,7 +178,6 @@ Ada dua jenis log, dengan tugas berbeda:
 - **Penagihan pembayaran termin oleh SA** untuk membantu tim finance: pencatatan termin per kontrak, status pembayaran, dan pembatalan dengan alasan. Rancangan tabel transaksi revenue dari revisi sebelumnya bisa dipakai lagi di sini
 
 ### Fase 3
-- Jadwal kunjungan per agent
 - Sinkronisasi data sekolah dengan LMS Skolla lewat `lms_school_id`
 - Ringkasan otomatis laporan mingguan per sekolah
 
@@ -183,7 +201,7 @@ Disamakan dengan stack LMS Skolla yang sudah berjalan.
 
 ## Model data
 
-Draf lengkap ada di `docs/data-model.md`, ditulis dalam sintaks Prisma. Tabelnya `users`, `jenjang`, `packages`, `schools`, `school_contracts`, `retention_targets`, `school_assignments`, `visits`, dan `audit_logs`, semuanya dengan primary key auto increment.
+Draf lengkap ada di `docs/data-model.md`, ditulis dalam sintaks Prisma. Tabelnya `users`, `jenjang`, `packages`, `schools`, `school_contracts`, `retention_targets`, `school_assignments`, `visits`, dan `audit_logs`, semuanya dengan primary key auto increment. Revisi 15 menambah tabel `visit_plans` dan kolom `visits.plan_id`; usulannya ada di `docs/prd-rencana-kunjungan.md` dan belum disalin ke `docs/data-model.md`.
 
 Karena ID berurutan mudah ditebak (`/visits/1`, `/visits/2`, dan seterusnya), setiap halaman detail dan route foto wajib mengecek hak akses.
 
@@ -215,6 +233,7 @@ Karena ID berurutan mudah ditebak (`/visits/1`, `/visits/2`, dan seterusnya), se
 15. Halaman sekolah, Sekolah saya, riwayat agent, halaman audit log, dan pengubahan akun agent oleh manager.
 16. Dockerfile produksi untuk `backend/` dan `frontend/`, `docker-compose.yml`, `scripts/deploy.sh`, dan uji coba di server internal.
 17. Audit keamanan sebelum dipakai tim.
+18. Revisi 15: rencana kunjungan dan pembatasan check-in, mengikuti tahapan M1 sampai M6 di `docs/prd-rencana-kunjungan.md`, lalu audit keamanan ulang untuk endpoint baru. Rilis MVP menunggu langkah ini dan data penugasan asli.
 
 Setiap langkah ditutup dengan tes dan commit.
 
@@ -222,6 +241,7 @@ Setiap langkah ditutup dengan tes dan commit.
 
 - Design system: `docs/design-system.md` dan sumbernya di `docs/design-system/skolla-lms/`
 - Mockup UI buatan user: `docs/references/mockups/`
+- PRD rencana kunjungan (revisi 15): `docs/prd-rencana-kunjungan.md`
 
 ## Keputusan penting
 
@@ -263,6 +283,19 @@ Setiap langkah ditutup dengan tes dan commit.
 - 2026-11-14: Kohort retention memakai tahun kalender, Januari sampai Desember (WIB).
 - 2026-11-14: Retention sekolah dihitung ke agent yang sedang ditugaskan saat ini; jika sekolah dipindah, retention-nya ikut ke agent baru.
 
+- 2026-11-15: Agent hanya bisa check-in di sekolah yang sedang ditugaskan kepadanya, atau di sekolah lain yang punya rencana terjadwal untuk hari itu. Menggantikan aturan "agent tetap bisa check-in di sekolah yang tidak ditugaskan kepadanya".
+- 2026-11-15: Manager dan admin membuat jadwal kunjungan untuk agent, dan agent membuat rencana sendiri. Rencana agent ke sekolah di luar tugasnya harus disetujui manager. Hanya untuk sekolah yang sudah ada di data sekolah.
+- 2026-11-15: Persetujuan adalah izin kunjungan untuk satu rencana. Penugasan dan retention tidak berubah.
+- 2026-11-15: Rencana kunjungan masuk MVP, dan rilis menunggu fitur ini. Jadwal kunjungan dipindah dari Fase 3.
+- 2026-11-15: Status rencana "Selesai" tercapai setelah agent check-out di tempat klien (kunjungan `DONE`), bukan saat check-in, lalu agent bisa menuju kunjungan berikutnya kalau ada. Kalau kunjungan masih ONGOING saat tanggal rencana lewat tengah malam WIB, rencana tetap Terjadwal sampai check-out, tidak berpindah ke Terlewat. Terlewat hanya kalau tidak ada kunjungan terhubung sama sekali.
+
 ## Pertanyaan terbuka
 
-Belum ada. Tambahkan di sini jika muncul saat coding.
+Asumsi revisi 15 yang perlu dikonfirmasi (rincian di bagian Pertanyaan terbuka `docs/prd-rencana-kunjungan.md`):
+- [ ] Izin kunjungan hanya berlaku di tanggal rencana (WIB).
+- [ ] Admin ikut bisa membuat jadwal dan memutus pengajuan.
+- [ ] Agent pemegang sekolah tidak diberi tahu jika agent lain dijadwalkan ke sekolahnya.
+- [ ] Tanggal rencana paling jauh 90 hari ke depan.
+- [ ] Agent tidak bisa menolak jadwal dari manager.
+- [ ] Rencana tidak wajib untuk check-in di sekolah sendiri.
+- [ ] Target ukuran keberhasilan fitur ini.
