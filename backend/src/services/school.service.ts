@@ -152,11 +152,26 @@ export async function addRenewal(actor: AuthUser, schoolId: number, input: { pre
   return getSchool(actor, schoolId)
 }
 
-/** Opsi sekolah untuk pemilih check-in: semua sekolah (agent boleh check-in di mana saja), tanpa nilai kontrak. */
-export async function schoolOptions(actor: AuthUser) {
-  const rows = await prisma.school.findMany({
-    select: { id: true, name: true, npsn: true, city: true, assignments: { where: { unassignedAt: null }, select: { agentId: true } } },
-    orderBy: { name: 'asc' },
+/**
+ * Opsi sekolah untuk layar agent (pemilih check-in dan pembuatan rencana), tanpa nilai kontrak.
+ * `assigned` = sekolah ditugaskan ke agent; `hasPlanToday` = ada rencana terjadwal hari ini (WIB);
+ * `allowedToday` = agent boleh check-in hari ini (ditugaskan atau punya rencana terjadwal). Lihat FR-13, FR-16.
+ */
+export async function schoolOptions(actor: AuthUser, now = new Date()) {
+  const todayWib = dateKeyIn(now)
+  const [rows, plansToday] = await Promise.all([
+    prisma.school.findMany({
+      select: { id: true, name: true, npsn: true, city: true, assignments: { where: { unassignedAt: null }, select: { agentId: true } } },
+      orderBy: { name: 'asc' },
+    }),
+    actor.role === 'AGENT'
+      ? prisma.visitPlan.findMany({ where: { agentId: actor.id, planDate: new Date(`${todayWib}T00:00:00Z`), status: 'APPROVED' }, select: { schoolId: true } })
+      : Promise.resolve([] as { schoolId: number }[]),
+  ])
+  const planSchoolIds = new Set(plansToday.map((p) => p.schoolId))
+  return rows.map((r) => {
+    const assigned = r.assignments.some((a) => a.agentId === actor.id)
+    const hasPlanToday = planSchoolIds.has(r.id)
+    return { id: r.id, name: r.name, npsn: r.npsn, city: r.city ?? '', assigned, hasPlanToday, allowedToday: assigned || hasPlanToday }
   })
-  return rows.map((r) => ({ id: r.id, name: r.name, npsn: r.npsn, city: r.city ?? '', assigned: r.assignments.some((a) => a.agentId === actor.id) }))
 }

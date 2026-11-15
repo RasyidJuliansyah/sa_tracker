@@ -46,6 +46,10 @@ describe.skipIf(!ok)('check-in, check-out, foto (database uji)', () => {
     const j = await prisma.jenjang.create({ data: { name: `JB7${stamp}`.slice(0, 28) } })
     const p = await prisma.package.create({ data: { name: `PB7${stamp}` } })
     schoolId = (await prisma.school.create({ data: { npsn: String(randomInt(10000000, 99999999)), name: 'Sekolah B7', jenjangId: j.id, packageId: p.id, partnershipStartDate: new Date('2025-01-01') } })).id
+    // Check-in kini dibatasi ke sekolah yang ditugaskan (revisi 15). Tugaskan sekolah ke kedua agent uji.
+    for (const r of ['agent', 'agent2'] as const) {
+      await prisma.schoolAssignment.create({ data: { schoolId, agentId: ids[r]!, assignedById: ids.admin! } })
+    }
   })
   afterAll(async () => { server?.close(); await prisma?.$disconnect() })
 

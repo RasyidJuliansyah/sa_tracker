@@ -59,15 +59,26 @@ Peran: ADMIN, MANAGER.
 | PUT | `/retention-targets/:year` | `{ targetPercent }` (0–100), dikembalikan daftar terbaru |
 
 ## Kunjungan (B7)
-Kunjungan: `{ id, agentId, agentName, schoolId, schoolName, assigned, timezone, checkInAt, checkOutAt, durationMinutes, status: ONGOING|DONE, report, accuracyM, lat, lng, hasPhoto }`. Waktu ISO UTC; tampilkan di `timezone` kunjungan.
+Kunjungan: `{ id, agentId, agentName, schoolId, schoolName, assigned, timezone, checkInAt, checkOutAt, durationMinutes, status: ONGOING|DONE, report, accuracyM, lat, lng, hasPhoto, plan: { id, purpose, source: SELF|MANAGER } | null }`. Waktu ISO UTC; tampilkan di `timezone` kunjungan.
 | Metode | Path | Peran | Keterangan |
 |---|---|---|---|
-| POST | `/visits/check-in` | AGENT | `multipart/form-data`: `schoolId, lat, lng, accuracy?, photo` (JPEG/PNG/WebP asli, maks 8 MB). Jam dari server, zona agent disalin. Satu kunjungan ONGOING per agent (409 bila ada). Boleh di sekolah yang tidak ditugaskan. |
+| POST | `/visits/check-in` | AGENT | `multipart/form-data`: `schoolId, lat, lng, accuracy?, photo` (JPEG/PNG/WebP asli, maks 8 MB). Jam dari server, zona agent disalin. Satu kunjungan ONGOING per agent (409 bila ada). **Revisi 15:** hanya sekolah yang ditugaskan atau punya rencana terjadwal hari ini (WIB); selain itu 403. Kunjungan dihubungkan ke rencana terjadwal bila ada (`plan_id`). |
 | POST | `/visits/:id/check-out` | AGENT (pemilik) | `{ report }` wajib. 409 bila sudah selesai. |
 | GET | `/visits?from&to&agentId&schoolId&status&page&pageSize` | semua (AGENT: milik sendiri) | `{ total, items }`, terbaru dulu. |
 | GET | `/visits/:id` | semua (AGENT: milik sendiri; lainnya 404) | `{ visit }` |
 | GET | `/visits/:id/photo` | sama | Gambar; `Cache-Control: no-store`, `nosniff`. Satu-satunya jalan ke foto (folder `PHOTO_STORAGE_DIR` di luar publik). |
-Audit CHECK_IN/CHECK_OUT hanya memuat `schoolId`, tanpa koordinat.
+Audit CHECK_IN/CHECK_OUT hanya memuat `schoolId`, tanpa koordinat. Audit CHECK_IN juga memuat `planId` (atau null).
+
+## Rencana kunjungan (revisi 15)
+Rencana: `{ id, agentId, agentName, schoolId, schoolName, npsn, city, planDate (yyyy-mm-dd WIB), purpose, source: SELF|MANAGER, storedStatus: PENDING|APPROVED|REJECTED|CANCELLED, status: PENDING|APPROVED|REJECTED|CANCELLED|DONE|MISSED|EXPIRED, decidedBy, decidedAt, decisionNote, visitId, createdAt }`. `status` adalah status turunan yang ditampilkan (Menunggu persetujuan/Terjadwal/Ditolak/Dibatalkan/Selesai/Terlewat/Kedaluwarsa); `storedStatus` yang tersimpan. Lihat `docs/prd-rencana-kunjungan.md`.
+| Metode | Path | Peran | Keterangan |
+|---|---|---|---|
+| GET | `/visit-plans?from&to&agentId&schoolId&source&upcoming` | semua (AGENT: milik sendiri) | `{ total, items }`, terbaru dulu (maks 500). `upcoming=true` hanya Mendatang, `false` hanya Riwayat. Status turunan difilter di server. |
+| POST | `/visit-plans` | AGENT, MANAGER, ADMIN | `{ agentId?, schoolId, planDate, purpose }`. AGENT: `agentId` selalu dirinya. Status awal: manager/admin → Terjadwal; agent+sekolah ditugaskan → Terjadwal; agent+sekolah lain → Menunggu persetujuan. Tanggal hari ini–90 hari, tujuan 5–255 kar. Satu rencana aktif per agent+sekolah+tanggal (409). |
+| GET | `/visit-plans/:id` | semua (AGENT: milik sendiri; lainnya 404) | `{ plan }`. |
+| POST | `/visit-plans/:id/cancel` | pembuat, MANAGER, ADMIN | Agent hanya membatalkan rencananya sendiri (bukan jadwal dari manager → 403). Rencana yang sudah punya kunjungan → 409. |
+
+Persetujuan/penolakan pengajuan (`/visit-plans/:id/approve|reject`) oleh MANAGER/ADMIN belum diimplementasikan di tahap ini (menyusul di layar manager).
 
 ## Dashboard (B8)
 Query: `period=day|week|month` (default week), `offset` (0 = periode ini, −1 = sebelumnya). Batas periode dihitung dalam WIB (minggu Senin–Minggu); retention tahunan tidak ikut periode.

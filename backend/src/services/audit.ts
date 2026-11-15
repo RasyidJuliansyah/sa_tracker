@@ -4,6 +4,7 @@ import { prisma } from '../db.js'
 export type AuditAction =
   | 'CREATE' | 'UPDATE' | 'DEACTIVATE' | 'ASSIGN' | 'UNASSIGN' | 'CHECK_IN' | 'CHECK_OUT'
   | 'LOGIN' | 'LOGIN_FAILED' | 'PASSWORD_CHANGE' | 'IMPORT' | 'EXPORT'
+  | 'APPROVE' | 'REJECT' | 'CANCEL'
 
 export type Tx = Prisma.TransactionClient
 

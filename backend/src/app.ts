@@ -11,6 +11,7 @@ import { usersRouter } from './routes/users.routes.js'
 import { schoolRouter } from './routes/school.routes.js'
 import { assignmentRouter } from './routes/assignment.routes.js'
 import { visitRouter } from './routes/visit.routes.js'
+import { visitPlanRouter } from './routes/visit-plan.routes.js'
 import { dashboardRouter } from './routes/dashboard.routes.js'
 import { csvRouter } from './routes/csv.routes.js'
 import { healthRouter } from './routes/health.routes.js'
@@ -39,6 +40,7 @@ export function createApp() {
   app.use('/api', schoolRouter)
   app.use('/api', assignmentRouter)
   app.use('/api', visitRouter)
+  app.use('/api', visitPlanRouter)
   app.use('/api', dashboardRouter)
   app.use('/api', csvRouter)
   app.use('/api/health', healthRouter)

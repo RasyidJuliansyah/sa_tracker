@@ -86,6 +86,8 @@ describe.skipIf(!ok)('perbaikan hasil audit keamanan (database uji)', () => {
       const agent = await db.user.create({ data: { name: 'Agent Foto', email: em('agentfoto'), passwordHash: hash, role: 'AGENT' } })
       const j = await db.jenjang.findFirst({ orderBy: { id: 'desc' } }), p = await db.package.findFirst({ orderBy: { id: 'desc' } })
       const sch = await db.school.create({ data: { npsn: String(55000000 + (stamp % 1000000)), name: 'Sek Sec', jenjangId: j!.id, packageId: p!.id, partnershipStartDate: new Date('2025-01-01') } })
+      // Check-in dibatasi (revisi 15): tugaskan sekolah agar lolos izin dan rejection diuji adalah konflik ONGOING (409), bukan 403.
+      await db.schoolAssignment.create({ data: { schoolId: sch.id, agentId: agent.id, assignedById: agent.id } })
       await db.visit.create({ data: { agentId: agent.id, schoolId: sch.id, timezone: 'WIB', checkInAt: new Date(), checkInLat: 0, checkInLng: 0, photoPath: 'x.jpg', status: 'ONGOING' } })
       const l = await fetch(base2 + '/api/auth/login', { method: 'POST', headers: { 'content-type': 'application/json', origin: 'http://localhost:3010' }, body: JSON.stringify({ email: em('agentfoto'), password: PW }) })
       const cookie = l.headers.get('set-cookie')!.split(';')[0]!
