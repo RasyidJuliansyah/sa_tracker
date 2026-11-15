@@ -13,18 +13,20 @@ const rekap: NavItem = { label: 'Rekap kunjungan', to: '/rekap', icon: 'mdi-clip
 const sekolah: NavItem = { label: 'Sekolah', to: '/sekolah', icon: 'mdi-school-outline', alsoActiveFor: ['/sekolah/'] }
 const penugasan: NavItem = { label: 'Penugasan', to: '/penugasan', icon: 'mdi-swap-horizontal' }
 const target: NavItem = { label: 'Target retention', to: '/target-retention', icon: 'mdi-target' }
+// ponytail: menu disembunyikan dari sidebar (minta user), halaman & rute tetap ada. Tampilkan lagi: tambah balik ke sidebarItems di bawah.
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const imporEkspor: NavItem = { label: 'Impor & ekspor', to: '/impor-ekspor', icon: 'mdi-file-delimited-outline' }
 const audit: NavItem = { label: 'Audit log', to: '/audit-log', icon: 'mdi-history' }
 
 // Urutan dan nama mengikuti Figma: Sidebar/Manager dan Sidebar/Admin
 export const sidebarItems: Record<'ADMIN' | 'MANAGER', NavItem[]> = {
   MANAGER: [
-    dashboard, rekap, sekolah, penugasan, target, imporEkspor,
+    dashboard, rekap, sekolah, penugasan, target,
     { label: 'Akun agent', to: '/akun-agent', icon: 'mdi-account-multiple-outline' },
     audit,
   ],
   ADMIN: [
-    dashboard, rekap, sekolah, penugasan, target, imporEkspor,
+    dashboard, rekap, sekolah, penugasan, target,
     { label: 'Akun', to: '/akun', icon: 'mdi-account-multiple-outline' },
     { label: 'Master data', to: '/master-data', icon: 'mdi-shape-outline' },
     audit,
