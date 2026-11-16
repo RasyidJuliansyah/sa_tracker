@@ -40,6 +40,7 @@ const active = (item: NavItem, isActive: boolean) =>
         >
           <v-icon :icon="item.icon" size="22" />
           <span>{{ item.label }}</span>
+          <span v-if="item.badge?.value" class="sidebar__badge">{{ item.badge.value }}</span>
         </a>
       </router-link>
     </nav>
@@ -113,5 +114,19 @@ const active = (item: NavItem, isActive: boolean) =>
 }
 .sidebar__item--active .v-icon {
   color: rgb(var(--v-theme-secondary));
+}
+.sidebar__badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  margin-left: auto;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: rgb(var(--v-theme-warning-surface));
+  color: rgb(var(--v-theme-warning));
+  font-size: 11px;
+  font-weight: 600;
 }
 </style>

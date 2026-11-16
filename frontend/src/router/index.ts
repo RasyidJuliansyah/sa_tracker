@@ -1,6 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { pinia } from '@/plugins/pinia'
 import { loadAgentData } from '@/services/agent'
+import { refreshPendingPlanCount } from '@/services/manager-plans'
 import { useAgentVisitsStore } from '@/stores/agent-visits'
 import { useReferenceStore } from '@/stores/reference'
 import { homeFor, MOCK_AUTH, useSessionStore, type Role } from '@/stores/session'
@@ -44,7 +45,10 @@ router.beforeEach(async (to) => {
   if (to.name === 'login') return session.user ? homeFor(session.user.role) : true
   if (to.name === 'komponen') return true
   if (!session.user) return { name: 'login' }
-  if (session.user.role !== 'AGENT') await useReferenceStore(pinia).load()
+  if (session.user.role !== 'AGENT') {
+    await useReferenceStore(pinia).load()
+    if (!MOCK_AUTH) void refreshPendingPlanCount()
+  }
   else if (!MOCK_AUTH && !agentLoaded) { await Promise.all([loadAgentData(), useAgentVisitsStore(pinia).load()]); agentLoaded = true }
   if (to.path === '/') return homeFor(session.user.role)
   if (!allowedRoles(to.path).includes(session.user.role)) return homeFor(session.user.role)

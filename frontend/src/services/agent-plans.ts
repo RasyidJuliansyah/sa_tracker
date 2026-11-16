@@ -8,6 +8,7 @@ export type PlanStatus = 'PENDING' | 'APPROVED' | 'REJECTED' | 'CANCELLED' | 'DO
 export interface Plan {
   id: number
   agentId: number
+  agentName: string
   schoolId: number
   schoolName: string
   npsn: string

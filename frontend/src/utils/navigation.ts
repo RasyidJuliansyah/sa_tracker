@@ -1,3 +1,4 @@
+import { pendingPlanCount } from '@/services/manager-plans'
 import type { Role } from '@/stores/session'
 
 export interface NavItem {
@@ -6,11 +7,14 @@ export interface NavItem {
   icon: string
   /** Awalan path lain yang ikut menandai item ini aktif (mis. halaman detail). */
   alsoActiveFor?: string[]
+  /** Lencana angka di sebelah label (mis. jumlah pengajuan menunggu, FR-22). Reaktif lewat ref. */
+  badge?: import('vue').Ref<number>
 }
 
 const dashboard: NavItem = { label: 'Dashboard', to: '/dashboard', icon: 'mdi-view-dashboard-outline' }
 const rekap: NavItem = { label: 'Rekap kunjungan', to: '/rekap', icon: 'mdi-clipboard-text-outline', alsoActiveFor: ['/rekap/'] }
 const sekolah: NavItem = { label: 'Sekolah', to: '/sekolah', icon: 'mdi-school-outline', alsoActiveFor: ['/sekolah/'] }
+const jadwalKunjungan: NavItem = { label: 'Jadwal kunjungan', to: '/jadwal-kunjungan', icon: 'mdi-calendar-check-outline', badge: pendingPlanCount }
 const penugasan: NavItem = { label: 'Penugasan', to: '/penugasan', icon: 'mdi-swap-horizontal' }
 const target: NavItem = { label: 'Target retention', to: '/target-retention', icon: 'mdi-target' }
 // ponytail: menu disembunyikan dari sidebar (minta user), halaman & rute tetap ada. Tampilkan lagi: tambah balik ke sidebarItems di bawah.
@@ -21,12 +25,12 @@ const audit: NavItem = { label: 'Audit log', to: '/audit-log', icon: 'mdi-histor
 // Urutan dan nama mengikuti Figma: Sidebar/Manager dan Sidebar/Admin
 export const sidebarItems: Record<'ADMIN' | 'MANAGER', NavItem[]> = {
   MANAGER: [
-    dashboard, rekap, sekolah, penugasan, target,
+    dashboard, rekap, jadwalKunjungan, sekolah, penugasan, target,
     { label: 'Akun agent', to: '/akun-agent', icon: 'mdi-account-multiple-outline' },
     audit,
   ],
   ADMIN: [
-    dashboard, rekap, sekolah, penugasan, target,
+    dashboard, rekap, jadwalKunjungan, sekolah, penugasan, target,
     { label: 'Akun', to: '/akun', icon: 'mdi-account-multiple-outline' },
     { label: 'Master data', to: '/master-data', icon: 'mdi-shape-outline' },
     audit,

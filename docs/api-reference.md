@@ -77,8 +77,9 @@ Rencana: `{ id, agentId, agentName, schoolId, schoolName, npsn, city, planDate (
 | POST | `/visit-plans` | AGENT, MANAGER, ADMIN | `{ agentId?, schoolId, planDate, purpose }`. AGENT: `agentId` selalu dirinya. Status awal: manager/admin → Terjadwal; agent+sekolah ditugaskan → Terjadwal; agent+sekolah lain → Menunggu persetujuan. Tanggal hari ini–90 hari, tujuan 5–255 kar. Satu rencana aktif per agent+sekolah+tanggal (409). |
 | GET | `/visit-plans/:id` | semua (AGENT: milik sendiri; lainnya 404) | `{ plan }`. |
 | POST | `/visit-plans/:id/cancel` | pembuat, MANAGER, ADMIN | Agent hanya membatalkan rencananya sendiri (bukan jadwal dari manager → 403). Rencana yang sudah punya kunjungan → 409. |
-
-Persetujuan/penolakan pengajuan (`/visit-plans/:id/approve|reject`) oleh MANAGER/ADMIN belum diimplementasikan di tahap ini (menyusul di layar manager).
+| GET | `/visit-plans/:id/decision` | MANAGER, ADMIN | Detail untuk pemutus (FR-9): `{ plan, school:{id,name,npsn,jenjang,package,city,address,picName,picContact}\|null, holder:{id,name}\|null, currentContract:{id,start,end,value}\|null, recentVisits:[{id,agentId,agentName,checkInAt,checkOutAt,status}] (5 terakhir) }`. |
+| POST | `/visit-plans/:id/approve` | MANAGER, ADMIN | `{ note? }` → `{ plan }`. Hanya status PENDING dan tanggal hari ini atau setelahnya (WIB) → 409 selain itu. |
+| POST | `/visit-plans/:id/reject` | MANAGER, ADMIN | `{ note }` (wajib, 1–255 kar, 400 kalau kosong) → `{ plan }`. Aturan status/tanggal sama seperti approve. |
 
 ## Dashboard (B8)
 Query: `period=day|week|month` (default week), `offset` (0 = periode ini, −1 = sebelumnya). Batas periode dihitung dalam WIB (minggu Senin–Minggu); retention tahunan tidak ikut periode.

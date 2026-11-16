@@ -115,3 +115,36 @@ Belum ada detail data asli Skolla (nama sekolah, NPSN, kontrak, nama akun) yang 
 
 ## Catatan
 - Commit `1f058e8` (15 Nov 2026) sudah di-push ke `origin/main`. Working tree bersih per akhir sesi ini.
+
+## Fitur baru: Rencana kunjungan agent + pembatasan check-in (15 Nov 2026, revisi PRD 15)
+
+Branch kerja: **`feat/rencana-kunjungan-agent`** (5 commit, **BELUM di-push**, belum di-merge ke `main`).
+Improvement dari user: agent bisa membuat rencana kunjungan sekolah sendiri di luar agenda yang ditugaskan manager. Sementara, agent **hanya bisa check-in ke sekolah yang ditugaskan**; untuk sekolah di luar tugas, rencana harus disetujui manager dulu. Status "Selesai" dicapai setelah agent **check-out** (bukan check-in). Kasus tepi tengah malam: rencana APPROVED yang kunjungannya masih ONGOING tetap "Terjadwal", tidak jadi "Terlewat".
+
+### Yang sudah dikerjakan (peran AGENT — SELESAI, teruji)
+- **Dokumen:** `docs/prd-rencana-kunjungan.md` (PRD revisi 15), `docs/PLAN.md` (revisi 15 + hak akses + log keputusan), `docs/api-reference.md` (bagian `/visit-plans`).
+- **Data model:** tabel `visit_plans`, kolom `visits.plan_id` (unik), enum audit `APPROVE/REJECT/CANCEL`. `schema.prisma` + delta idempotent `backend/sql/deltas/003_visit_plans.sql` (sudah diterapkan ke DB dev & uji).
+- **Backend:** modul murni `services/visit-plan-rules.ts` (status turunan + validasi) + `services/visit-plan.service.ts` + `routes/visit-plan.routes.ts` (GET/POST `/visit-plans`, GET `/visit-plans/:id`, POST `/visit-plans/:id/cancel`). `visit.service.ts` check-in kini cek kelayakan (403 kalau sekolah di luar tugas tanpa rencana terjadwal) lalu tautkan `plan_id`. `school.service.ts` `schoolOptions` nambah `hasPlanToday`/`allowedToday`.
+- **Frontend agent:** tab **Rencana** di nav bawah; `views/agent/RencanaView.vue` (Mendatang/Riwayat) + `views/agent/BuatRencanaView.vue` (pilih sekolah → tanggal → tujuan); `services/agent-plans.ts`; `CheckInSchoolStep.vue` dibatasi (hanya sekolah boleh hari ini + tombol "Ajukan kunjungan ke sekolah lain"); blok "Rencana hari ini" di `BerandaView.vue`.
+- **Tes (hijau):** backend modul murni 22, DB integrasi 18 (visit-plan + pembatasan check-in), typecheck bersih. Frontend 71 unit + typecheck + build.
+
+### Peran MANAGER (approve/reject) — SELESAI, teruji
+- **Backend:** `getPlanForDecision`/`decidePlan` di `services/visit-plan.service.ts` (reuse `currentContract` dari `contract-rules.ts`, tidak duplikasi logic sekolah). Route baru: `GET /visit-plans/:id/decision`, `POST /visit-plans/:id/approve|reject` (requireRole MANAGER/ADMIN). Aturan: hanya status PENDING, tanggal hari ini atau setelahnya (WIB) → selain itu 409; reject wajib `note` (400 kalau kosong); approve `note` opsional; update atomik bersyarat (`updateMany` count 0 → 409 "sudah diputus pihak lain"); audit APPROVE/REJECT di `visit_plan` dengan `decidedById`/`decidedAt`/`decisionNote`.
+- **Frontend:** `services/manager-plans.ts` (list+filter, decision detail, approve, reject, createSchedule, `pendingPlanCount` ref untuk lencana sidebar), `views/manager/JadwalKunjunganView.vue` (tab Menunggu persetujuan/Semua rencana + filter agent/sekolah/tanggal/status/sumber), `components/manager/BuatJadwalDialog.vue` (jadwal manager→agent, termasuk sekolah di luar tugas), `components/manager/PlanDecisionDialog.vue` (detail FR-9 + Setujui/Tolak). Rute `/jadwal-kunjungan`, item sidebar manager & admin dengan lencana jumlah PENDING (`utils/navigation.ts`), dimuat di router guard (`refreshPendingPlanCount`).
+- **Tes (hijau):** `backend/tests/db/visit-plan.db.test.ts` naik dari 10 ke 15 tes (tambahan approve/reject/403 peran/400 tanpa alasan/409 ganda-putus/409 tanggal lewat/detail pemutus/school_assignments tak berubah), `tsc --noEmit` bersih. Frontend: 71→74 tes unit (file baru `manager-plans.test.ts` untuk querystring filter), `vue-tsc --noEmit` + `build` bersih.
+- **Belum:** verifikasi visual langsung vs Figma (butuh backend jalan + data rencana ter-seed; data dummy sudah dikosongkan). Risiko pra-ada di bawah ini masih sama, belum disentuh.
+
+### Dua masalah lingkungan/pra-ada yang ditemukan (BUKAN dari fitur ini)
+1. **Mismatch DB uji:** `DATABASE_URL` menunjuk container `mysql-local` (port 3307), tapi `backend/scripts/reset-test-db.sh` membangun DB uji di container lain `sa-visit-mysql` (port 3308). Akibatnya `npm test` mereset DB yang salah → semua tes DB gagal konek. Workaround sesi ini: DB uji `sa_visit_tracker_test` dibuat manual di 3307 + semua delta diterapkan + grant akses MYSQL_USER. **Perlu perbaikan permanen** (set container/port di skrip), kalau tidak sesi berikutnya kena lagi.
+2. **`accounts.db.test.ts` gagal deterministik:** `src/utils/password.ts` menstub `generateTempPassword()` → `'SkollaEdu'` (9 char), tapi tesnya menuntut 12 char. Gagal juga di `main`, di luar fitur ini.
+
+### PERTANYAAN TERBUKA untuk user (jawab di awal sesi lanjutan)
+Pilih arah berikutnya:
+- **(a)** Lanjut peran MANAGER: endpoint approve/reject + layar "Jadwal kunjungan", supaya alur pengajuan agent tertutup. *(rekomendasi — tanpa ini pengajuan PENDING menggantung)*
+- **(b)** Perbaiki dulu mismatch DB uji + tes `accounts.db.test.ts`.
+- **(c)** Verifikasi visual layar agent vs Figma (perlu seed data rencana).
+- **(d)** Push branch `feat/rencana-kunjungan-agent` untuk review / merge ke `main`.
+
+| Kode update | Informasi yang diupdate |
+|---|---|
+| UPD-04 | Rencana kunjungan agent + pembatasan check-in (PRD rev 15): PRD baru, data model `visit_plans`+`visits.plan_id`+enum audit, backend `visit-plan-rules.ts`/`visit-plan.service.ts`/`visit-plan.routes.ts` + check-in dibatasi, frontend tab Rencana (`RencanaView`/`BuatRencanaView`/`agent-plans.ts`) + pemilih check-in dibatasi + blok Rencana hari ini. Branch `feat/rencana-kunjungan-agent`, 5 commit, belum di-push. Peran manager (approve/reject) belum dibuat |

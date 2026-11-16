@@ -145,4 +145,56 @@ describe.skipIf(!ok)('rencana kunjungan & pembatasan check-in (database uji)', (
     const jadwalId = (await jadwal.json()).plan.id
     expect((await call('agent', `/api/visit-plans/${jadwalId}/cancel`, 'POST')).status).toBe(403)
   })
+
+  const futureWib = (n: number) => new Date(Date.now() + n * 86400_000 + 7 * 3600_000).toISOString().slice(0, 10)
+
+  it('agent bukan manager/admin ditolak 403 saat approve/reject', async () => {
+    const r = await call('agent', '/api/visit-plans', 'POST', { schoolId: otherSchool, planDate: futureWib(10), purpose: 'Pengajuan untuk ditolak peran' })
+    const id = (await r.json()).plan.id
+    expect((await call('agent', `/api/visit-plans/${id}/approve`, 'POST', {})).status).toBe(403)
+  })
+
+  it('tolak tanpa alasan ditolak 400; dengan alasan berhasil dan agent melihat alasannya (FR-10, FR-11)', async () => {
+    const r = await call('agent', '/api/visit-plans', 'POST', { schoolId: otherSchool, planDate: futureWib(11), purpose: 'Pengajuan yang akan ditolak' })
+    const id = (await r.json()).plan.id
+    expect((await call('manager', `/api/visit-plans/${id}/reject`, 'POST', {})).status).toBe(400)
+    const rej = await call('manager', `/api/visit-plans/${id}/reject`, 'POST', { note: 'Agen tidak bertugas di sekolah ini' })
+    expect(rej.status).toBe(200)
+    const { plan } = await rej.json()
+    expect(plan.status).toBe('REJECTED')
+    expect(plan.decisionNote).toBe('Agen tidak bertugas di sekolah ini')
+    expect(plan.decidedBy).toBe('U manager')
+    const seen = (await (await call('agent', `/api/visit-plans/${id}`)).json()).plan
+    expect(seen.decisionNote).toBe('Agen tidak bertugas di sekolah ini')
+  })
+
+  it('pengajuan yang sudah diputus tidak bisa diputus lagi (409)', async () => {
+    const r = await call('agent', '/api/visit-plans', 'POST', { schoolId: otherSchool, planDate: futureWib(12), purpose: 'Pengajuan diputus dua kali' })
+    const id = (await r.json()).plan.id
+    expect((await call('manager', `/api/visit-plans/${id}/approve`, 'POST', {})).status).toBe(200)
+    expect((await call('manager', `/api/visit-plans/${id}/approve`, 'POST', {})).status).toBe(409)
+  })
+
+  it('setujui (catatan opsional) lalu check-in berhasil (FR-8..FR-12); school_assignments tidak berubah', async () => {
+    // agent "other" tidak ditugaskan ke otherSchool dan belum punya rencana hari ini di sana.
+    const before = await prisma.schoolAssignment.count()
+    const r = await call('other', '/api/visit-plans', 'POST', { schoolId: otherSchool, planDate: todayWib, purpose: 'Pengajuan untuk disetujui hari ini' })
+    const id = (await r.json()).plan.id
+    const detail = await call('manager', `/api/visit-plans/${id}/decision`)
+    expect(detail.status).toBe(200)
+    const d = await detail.json()
+    expect(d.school.id).toBe(otherSchool)
+    expect(Array.isArray(d.recentVisits)).toBe(true)
+    const appr = await call('manager', `/api/visit-plans/${id}/approve`, 'POST', { note: 'Oke, silakan.' })
+    expect(appr.status).toBe(200)
+    expect((await appr.json()).plan.status).toBe('APPROVED')
+    expect(await prisma.schoolAssignment.count()).toBe(before)
+    const ci = await checkIn('other', otherSchool)
+    expect(ci.status).toBe(201)
+  })
+
+  it('pengajuan yang tanggalnya sudah lewat tidak bisa diputus (409)', async () => {
+    const past = await prisma.visitPlan.create({ data: { agentId: ids.agent!, schoolId: otherSchool, planDate: new Date(`${new Date(Date.now() - 2 * 86400_000 + 7 * 3600_000).toISOString().slice(0, 10)}T00:00:00Z`), purpose: 'Pengajuan lampau', status: 'PENDING', createdById: ids.agent! } })
+    expect((await call('manager', `/api/visit-plans/${past.id}/approve`, 'POST', {})).status).toBe(409)
+  })
 })

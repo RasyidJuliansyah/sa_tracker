@@ -37,9 +37,9 @@ Laporan kunjungan agent service account ke sekolah pelanggan LMS Skolla belum te
 
 ### Rencana kunjungan (revisi 15)
 Rincian kebutuhan, status, edge case, dan usulan tabel `visit_plans` ada di `docs/prd-rencana-kunjungan.md`.
-- [ ] **Jadwal dari manager** (admin dan manager). Membuat jadwal kunjungan untuk satu agent: sekolah, tanggal, dan tujuan. Jadwal dari manager langsung terjadwal, termasuk untuk sekolah yang tidak ditugaskan kepada agent itu.
-- [ ] **Rencana buatan agent.** Agent membuat rencana kunjungannya sendiri di luar jadwal dari manager. Rencana ke sekolah yang ditugaskan kepadanya langsung terjadwal. Rencana ke sekolah lain menjadi pengajuan yang menunggu persetujuan manager. Hanya sekolah yang sudah ada di data sekolah yang bisa dipilih.
-- [ ] **Persetujuan pengajuan** (admin dan manager). Manager melihat profil sekolah, agent yang memegangnya, kontrak berjalan, kunjungan terakhir, dan tujuan kunjungan dari agent, lalu menyetujui atau menolak dengan alasan. Persetujuan hanya memberi izin kunjungan untuk rencana itu, pada tanggalnya. Penugasan dan retention tidak berubah, dan kunjungan berikutnya ke sekolah itu perlu pengajuan baru.
+- [x] **Jadwal dari manager** (admin dan manager). Membuat jadwal kunjungan untuk satu agent: sekolah, tanggal, dan tujuan. Jadwal dari manager langsung terjadwal, termasuk untuk sekolah yang tidak ditugaskan kepada agent itu.
+- [x] **Rencana buatan agent.** Agent membuat rencana kunjungannya sendiri di luar jadwal dari manager. Rencana ke sekolah yang ditugaskan kepadanya langsung terjadwal. Rencana ke sekolah lain menjadi pengajuan yang menunggu persetujuan manager. Hanya sekolah yang sudah ada di data sekolah yang bisa dipilih.
+- [x] **Persetujuan pengajuan** (admin dan manager). Manager melihat profil sekolah, agent yang memegangnya, kontrak berjalan, kunjungan terakhir, dan tujuan kunjungan dari agent, lalu menyetujui atau menolak dengan alasan. Persetujuan hanya memberi izin kunjungan untuk rencana itu, pada tanggalnya. Penugasan dan retention tidak berubah, dan kunjungan berikutnya ke sekolah itu perlu pengajuan baru.
 - [ ] **Status rencana.** Menunggu persetujuan, Terjadwal, Ditolak, dan Dibatalkan disimpan. Selesai, Terlewat, dan Kedaluwarsa dihitung dari tanggal dan kunjungan, tidak disimpan. Selesai baru tercapai setelah agent check-out di tempat klien (kunjungan berstatus DONE), bukan saat check-in; agent lalu bisa menuju kunjungan berikutnya kalau ada. Selama kunjungan masih berlangsung (ONGOING), rencana tetap tampil Terjadwal.
 - [ ] **Pembatalan.** Agent membatalkan rencananya sendiri. Jadwal dari manager hanya dibatalkan manager atau admin. Rencana yang sudah punya kunjungan tidak bisa dibatalkan.
 - [ ] **Ikut penugasan.** Saat sekolah dilepas dari agent, rencana buatan agent itu yang terjadwal karena penugasan kembali menunggu persetujuan. Saat sekolah ditugaskan kepadanya, pengajuannya yang masih menunggu menjadi terjadwal.
@@ -52,7 +52,7 @@ Rincian kebutuhan, status, edge case, dan usulan tabel `visit_plans` ada di `doc
 - [ ] **Kelola akun agent.** Mengubah data akun berperan agent (nama, zona waktu, status aktif). Membuat akun baru tetap hanya oleh admin.
 - [ ] **Rekap kunjungan.** Tabel berisi tanggal, hari, nama agent, sekolah, jam check-in, jam check-out, durasi, dan status. Bisa difilter per tanggal, agent, dan sekolah.
 - [ ] **Detail kunjungan.** Foto, laporan, lokasi check-in dalam bentuk tautan ke Google Maps, dan rencana yang terhubung (atau "Tanpa rencana").
-- [ ] **Jadwal kunjungan.** Tab Menunggu persetujuan (jumlahnya tampil di menu samping) dan Semua rencana, bisa difilter per agent, sekolah, tanggal, status, dan sumber. Tombol Buat jadwal. Admin melihat halaman yang sama.
+- [x] **Jadwal kunjungan.** Tab Menunggu persetujuan (jumlahnya tampil di menu samping) dan Semua rencana, bisa difilter per agent, sekolah, tanggal, status, dan sumber. Tombol Buat jadwal. Admin melihat halaman yang sama.
 - [ ] **Halaman sekolah.** Data sekolah, empat tanggal kerja sama, kontrak berjalan (periode, nilai kontrak, status perpanjangan), riwayat kontrak beserta retention setiap perpanjangan, agent yang ditugaskan, dan riwayat kunjungan terbaru di atas.
 
 ### Halaman agent

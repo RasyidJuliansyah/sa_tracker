@@ -3,6 +3,7 @@ import type { AuthUser } from '../middleware/auth.js'
 import { AppError } from '../utils/errors.js'
 import { dateKeyIn } from '../utils/timezone.js'
 import { withAudit, type Tx } from './audit.js'
+import { currentContract } from './contract-rules.js'
 import {
   derivePlanStatus,
   validatePlanDate,
@@ -164,6 +165,64 @@ export async function getPlan(actor: AuthUser, id: number, now = new Date()) {
   const p = await loadOne(id)
   if (!p || (actor.role === 'AGENT' && p.agentId !== actor.id)) throw new AppError('NOT_FOUND', 'Rencana tidak ditemukan.')
   return toPlan(p, dateKeyIn(now))
+}
+
+/**
+ * Detail pengajuan untuk pemutus (FR-9): profil sekolah, agent yang sedang memegangnya,
+ * kontrak berjalan, dan 5 kunjungan terakhir ke sekolah itu oleh agent mana pun.
+ */
+export async function getPlanForDecision(id: number, now = new Date()) {
+  const p = await loadOne(id)
+  if (!p) throw new AppError('NOT_FOUND', 'Rencana tidak ditemukan.')
+  const [school, holder, lastVisits] = await Promise.all([
+    prisma.school.findUnique({
+      where: { id: p.schoolId },
+      include: { jenjang: true, package: true, contracts: true },
+    }),
+    prisma.schoolAssignment.findFirst({ where: { schoolId: p.schoolId, unassignedAt: null }, include: { agent: { select: { id: true, name: true } } } }),
+    prisma.visit.findMany({
+      where: { schoolId: p.schoolId },
+      orderBy: { checkInAt: 'desc' },
+      take: 5,
+      include: { agent: { select: { id: true, name: true } } },
+    }),
+  ])
+  const todayWib = dateKeyIn(now)
+  const current = school ? currentContract(school.contracts.map((c) => ({ id: c.id, startDate: dk(c.contractStartDate)!, endDate: dk(c.contractEndDate)!, previousContractId: c.previousContractId, raw: c })), todayWib) : null
+  return {
+    plan: toPlan(p, todayWib),
+    school: school ? {
+      id: school.id, name: school.name, npsn: school.npsn, jenjang: school.jenjang.name, package: school.package.name,
+      city: school.city, address: school.address, picName: school.picName, picContact: school.picContact,
+    } : null,
+    holder: holder ? { id: holder.agent.id, name: holder.agent.name } : null,
+    currentContract: current ? { id: current.raw.id, start: dk(current.raw.contractStartDate)!, end: dk(current.raw.contractEndDate)!, value: Number(current.raw.contractValue) } : null,
+    recentVisits: lastVisits.map((v) => ({ id: v.id, agentId: v.agent.id, agentName: v.agent.name, checkInAt: v.checkInAt.toISOString(), checkOutAt: v.checkOutAt?.toISOString() ?? null, status: v.status })),
+  }
+}
+
+/**
+ * Setujui atau tolak pengajuan menunggu (FR-10). Hanya ADMIN/MANAGER, hanya status PENDING,
+ * dan hanya kalau tanggal rencana masih hari ini atau setelahnya (WIB). `note` wajib saat tolak.
+ */
+export async function decidePlan(actor: AuthUser, id: number, decision: 'APPROVE' | 'REJECT', note: string | null, ctx: Ctx, now = new Date()) {
+  const p = await loadOne(id)
+  if (!p) throw new AppError('NOT_FOUND', 'Rencana tidak ditemukan.')
+  const todayWib = dateKeyIn(now)
+  if (dk(p.planDate) < todayWib) throw new AppError('CONFLICT', 'Pengajuan ini sudah lewat tanggalnya, tidak bisa diputus.')
+  const newStatus = decision === 'APPROVE' ? 'APPROVED' : 'REJECTED'
+  await withAudit(async (tx) => {
+    const done = await tx.visitPlan.updateMany({
+      where: { id, status: 'PENDING' },
+      data: { status: newStatus, decidedById: actor.id, decidedAt: now, decisionNote: note },
+    })
+    if (done.count === 0) throw new AppError('CONFLICT', 'Pengajuan ini sudah diputus pihak lain.')
+    return {
+      result: null,
+      audit: { actorId: actor.id, action: decision as 'APPROVE' | 'REJECT', entityType: 'visit_plan', entityId: id, changes: { from: 'PENDING', to: newStatus, note }, ...ctx },
+    }
+  })
+  return toPlan((await loadOne(id))!, todayWib)
 }
 
 /**
